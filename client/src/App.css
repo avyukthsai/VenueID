@@ -1,0 +1,362 @@
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background-color: #f4f7ff;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.App {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.App-header {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.main-content-wrapper {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Hero Section Styling --- */
+.hero-section {
+  display: flex;
+  flex-direction: column; /* Stack combined logo/name and slogan vertically */
+  align-items: center; /* Center them horizontally */
+  justify-content: center;
+  gap: 0px; /* Adjust space between combined logo/name and slogan */
+  margin-bottom: 0; /* Managed by parent .main-content-wrapper's gap */
+  width: 100%;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.combined-logo-name-image {
+  width: 400px; /* Adjust this width based on your 'combo.png' dimensions */
+  height: auto; /* Maintain aspect ratio */
+  max-width: 90%; /* Ensure it's responsive and doesn't overflow on small screens */
+  margin-bottom: 5px; /* Add a little extra space below the main image */
+}
+
+.slogan-image {
+  width: 350px; /* Adjust this width based on your 'slogan.png' dimensions */
+  height: auto; /* Maintain aspect ratio */
+  max-width: 80%; /* Ensure it's responsive */
+  opacity: 0.8;
+}
+
+/* --- REMOVED unused image/group styles --- */
+/* .logo-image, .name-slogan-group, .app-name-image are no longer needed */
+
+/* --- Form Title Container --- */
+.form-title-container {
+  margin-bottom: 0; /* Managed by parent .main-content-wrapper's gap */
+}
+
+.form-title-container h1 {
+  font-size: 2.8em;
+  color: #2c3e50;
+  margin-bottom: 0.2em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 1.2em;
+  color: #667085;
+  text-align: center;
+  width: 100%;
+}
+
+/* --- Form Container and Columns --- */
+.form-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin-bottom: 0; /* Managed by parent .main-content-wrapper's gap */
+}
+
+.column {
+  flex: 1;
+  min-width: 300px;
+  max-width: 380px;
+  padding: 25px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background-color: #fcfcfc;
+  text-align: left;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.column h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #4a4a4a;
+  font-size: 1.4em;
+  border-bottom: 2px solid #e2f0ef;
+  padding-bottom: 10px;
+}
+
+.column input[type="text"],
+.column input[type="date"] {
+  width: calc(100% - 24px);
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1em;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.column input[type="text"]:focus,
+.column input[type="date"]:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.95em;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.radio-option input[type="radio"] {
+  margin-right: 10px;
+  accent-color: #28a745;
+  transform: scale(1.2);
+}
+
+.radio-option label {
+  font-size: 1.05em;
+  color: #343a40;
+  cursor: pointer;
+}
+
+/* --- Generate Button --- */
+.generate-button {
+  padding: 18px 40px;
+  font-size: 1.1em;
+  font-weight: 700;
+  cursor: pointer;
+  background-color: #2b81d7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.generate-button:hover:not(:disabled) {
+  background-color: #0b2c91;
+  transform: translateY(-2px);
+}
+
+.generate-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --- AI Response Container --- */
+.response-container {
+  margin-top: 0; /* Managed by parent .main-content-wrapper's gap */
+  width: 100%;
+  max-width: none; /* Allows response container to take full width within main-content-wrapper */
+  background-color: transparent; /* No background for this specific container */
+  padding: 20px 0; /* Add vertical padding for response content */
+  border-radius: 0;
+  text-align: left;
+  box-shadow: none;
+  border: none;
+}
+
+.response-container h2 {
+  color: #333;
+  margin-bottom: 1.5em;
+  text-align: center;
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+.response-container strong {
+  font-weight: bold;
+  color: #2b81d7;
+  display: block;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-size: 1.25em;
+}
+
+.response-container p {
+  margin-bottom: 0.8em;
+  line-height: 1.6;
+  color: #555;
+  font-size: 1em;
+}
+
+.response-container h1,
+.response-container h2,
+.response-container h3,
+.response-container h4,
+.response-container h5,
+.response-container h6 {
+  margin-top: 1.8em;
+  margin-bottom: 1em;
+  color: #2c3e50;
+}
+
+.response-container ul,
+.response-container ol {
+  margin-left: 28px;
+  margin-bottom: 1.2em;
+  line-height: 1.6;
+}
+
+.response-container a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.response-container a:hover {
+  text-decoration: underline;
+}
+
+/* --- Error Message --- */
+.error-message {
+  color: #dc3545;
+  background-color: #ffebe9;
+  border: 1px solid #dc3545;
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin-top: 0; /* Managed by parent .main-content-wrapper's gap */
+  font-weight: bold;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 900px) {
+  .App-header {
+    padding: 30px 20px;
+    gap: 20px;
+  }
+
+  .form-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .column {
+    width: 90%;
+    max-width: 500px;
+  }
+
+  .form-title-container h1 {
+    font-size: 2em;
+  }
+
+  .generate-button {
+    font-size: 1.4em;
+    padding: 15px 30px;
+  }
+
+  .hero-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .combined-logo-name-image {
+    width: 250px; /* Adjusted responsive width for combined logo/name */
+  }
+
+  .slogan-image {
+    width: 200px; /* Adjusted responsive width for slogan */
+  }
+}
+
+@media (max-width: 600px) {
+  .main-content-wrapper {
+    padding: 20px;
+    gap: 20px;
+  }
+  .combined-logo-name-image {
+    width: 180px; /* Further adjusted responsive width */
+  }
+  .slogan-image {
+    width: 140px; /* Further adjusted responsive width */
+  }
+
+  .form-title-container h1 {
+    font-size: 1.8em;
+  }
+
+  .subtitle {
+    font-size: 1em;
+  }
+
+  .column input[type="text"],
+  .column input[type="date"] {
+    font-size: 0.9em;
+    padding: 10px;
+  }
+
+  .radio-option label {
+    font-size: 0.9em;
+  }
+
+  .response-container {
+    padding: 20px;
+  }
+
+  .response-container h2 {
+    font-size: 1.5em;
+  }
+}
