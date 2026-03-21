@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import "./App.css";
-import ReactMarkdown from "react-markdown";
-
-const logoAndName = "/combo.png"; // This now contains both logo and the name "Venue ID"
-const slogan = "/slogan.png"; // This is just the slogan text as an image
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useUser,
+} from "@clerk/react";
+import { Link } from "react-router-dom";
 
 function App() {
+  const { user } = useUser();
   const [venueType, setVenueType] = useState("Artist Venue");
   const [country, setCountry] = useState("");
   const [state, setState] = useState("");
@@ -16,6 +21,8 @@ function App() {
   const [geminiResponse, setGeminiResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const venueOptions = [
     "Artist Venue",
@@ -28,6 +35,55 @@ function App() {
     "Political Rally",
     "Hackathon",
   ];
+
+  const handleSaveResults = async () => {
+    if (!user) {
+      setSaveMessage("Sign in to save results");
+      setTimeout(() => setSaveMessage(""), 3000);
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage("");
+
+    const searchParams = {
+      venueType,
+      country,
+      state,
+      city,
+      date,
+      time,
+      audienceInput,
+    };
+
+    try {
+      const response = await fetch("http://localhost:3001/api/searches", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          searchParams,
+          results: geminiResponse,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save results");
+      }
+
+      setSaveMessage("Results saved");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (err) {
+      console.error("Error saving results:", err);
+      setSaveMessage("Failed to save results");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -56,7 +112,7 @@ function App() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
+          errorData.error || `HTTP error! status: ${response.status}`,
         );
       }
 
@@ -70,20 +126,88 @@ function App() {
     }
   };
 
+  const parseVenues = (response) => {
+    const venues = response
+      .split("-----")
+      .map((block) => block.trim())
+      .filter((block) => block);
+    return venues.map((venueText) => {
+      const lines = venueText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line);
+      const venue = {};
+      lines.forEach((line) => {
+        const match = line.match(/\*\*(.*?):\*\*\s*(.*)/);
+        if (match) {
+          const key = match[1].toLowerCase().replace(/\s+/g, "_");
+          venue[key] = match[2];
+        }
+      });
+      return venue;
+    });
+  };
+
+  const renderVenues = () => {
+    const venues = parseVenues(geminiResponse);
+    return venues.map((venue, index) => (
+      <div key={index} className="venue-card">
+        <h3>{venue.venue}</h3>
+        <p>
+          <strong>Why this venue?</strong> {venue.why_this_venue}
+        </p>
+        <p>
+          <strong>Address:</strong> {venue.address}
+        </p>
+        <p>
+          <strong>Capacity:</strong> {venue.capacity}
+        </p>
+        <p>
+          <strong>Location:</strong> {venue.location}
+        </p>
+        <p>
+          <strong>Features:</strong> {venue.features}
+        </p>
+        <p>
+          <strong>URL to Website:</strong>{" "}
+          <a
+            href={venue.url_to_website}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {venue.url_to_website}
+          </a>
+        </p>
+        <p>
+          <strong>Time & Date:</strong> {venue["time_&_date"]}
+        </p>
+      </div>
+    ));
+  };
+
   return (
     <div className="App">
+      <div className="auth-header">
+        <div className="header-content">
+          <div className="logo">Venue ID</div>
+        </div>
+        <div>
+          <Show when="signed-in">
+            <Link to="/history" className="history-link">
+              History
+            </Link>
+          </Show>
+          <Show when="signed-out">
+            <SignInButton />
+            <SignUpButton />
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
+        </div>
+      </div>
       <div className="App-header">
         <div className="main-content-wrapper">
-          {/* Hero Section: Combined Logo+Name image, then Slogan image below it */}
-          <div className="hero-section">
-            <img
-              src={logoAndName}
-              alt="Venue ID Logo and Name"
-              className="combined-logo-name-image"
-            />
-            <img src={slogan} alt="Your Slogan Here" className="slogan-image" />
-          </div>
-
           <div className="form-title-container">
             <h1>Find Your Perfect Venue</h1>
             <p className="subtitle">
@@ -96,7 +220,11 @@ function App() {
               <h3>Select Event Type</h3>
               <div className="radio-group">
                 {venueOptions.map((option) => (
-                  <div key={option} className="radio-option">
+                  <div
+                    key={option}
+                    className="radio-option"
+                    onClick={() => setVenueType(option)}
+                  >
                     <input
                       type="radio"
                       id={option}
@@ -115,9 +243,9 @@ function App() {
               <h3>Location Details</h3>
               <input
                 type="text"
-                placeholder="Country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
+                placeholder="City (e.g., Cleveland)"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
               />
               <input
                 type="text"
@@ -127,9 +255,9 @@ function App() {
               />
               <input
                 type="text"
-                placeholder="City (e.g., Cleveland)"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+                placeholder="Country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
               />
             </div>
 
@@ -183,7 +311,25 @@ function App() {
           {geminiResponse && (
             <div className="response-container">
               <h2>AI's Top Venue Picks:</h2>
-              <ReactMarkdown>{geminiResponse}</ReactMarkdown>
+              {renderVenues()}
+              <div className="save-section">
+                {!user ? (
+                  <p className="sign-in-message">Sign in to save results</p>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleSaveResults}
+                      disabled={saving}
+                      className="save-button"
+                    >
+                      {saving ? "Saving..." : "Save these results"}
+                    </button>
+                    {saveMessage && (
+                      <p className="save-message">{saveMessage}</p>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
