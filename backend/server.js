@@ -1,9 +1,11 @@
+const dotenv = require("dotenv");
+
+dotenv.config(); // Load environment variables from .env file FIRST
+
 const express = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const dotenv = require("dotenv");
 const cors = require("cors");
-
-dotenv.config(); // Load environment variables from .env file
+const searchesRouter = require("./searches");
 
 const app = express();
 const port = 3001; // port for your backend
@@ -61,6 +63,9 @@ five hyphens on its own line, like this:**
 5. **Ensure strict adherence to the specified format for each venue.**
 `;
 
+// Routes
+app.use("/api/searches", searchesRouter);
+
 app.post("/generate-venue", async (req, res) => {
   const { venueType, country, state, city, date, time, audienceInput } =
     req.body;
@@ -80,7 +85,7 @@ app.post("/generate-venue", async (req, res) => {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       generationConfig,
       systemInstruction: systemInstruction,
     });
