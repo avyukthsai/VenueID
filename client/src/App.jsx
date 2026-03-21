@@ -9,6 +9,15 @@ import {
 } from "@clerk/react";
 import { Link } from "react-router-dom";
 
+function Toast({ message, type, onClose }) {
+  React.useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return <div className={`toast toast-${type}`}>{message}</div>;
+}
+
 function App() {
   const { user } = useUser();
   const [venueType, setVenueType] = useState("Artist Venue");
@@ -18,11 +27,15 @@ function App() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [audienceInput, setAudienceInput] = useState("");
+  const [venueSetting, setVenueSetting] = useState("Both");
+  const [audienceType, setAudienceType] = useState("General / All Ages");
+  const [additionalRequirements, setAdditionalRequirements] = useState("");
   const [geminiResponse, setGeminiResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [saveMessage, setSaveMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [toasts, setToasts] = useState([]);
 
   const venueOptions = [
     "Artist Venue",
@@ -36,15 +49,21 @@ function App() {
     "Hackathon",
   ];
 
+  const addToast = (message, type = "success") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
   const handleSaveResults = async () => {
     if (!user) {
-      setSaveMessage("Sign in to save results");
-      setTimeout(() => setSaveMessage(""), 3000);
+      addToast("Sign in to save results", "error");
       return;
     }
 
     setSaving(true);
-    setSaveMessage("");
 
     const searchParams = {
       venueType,
@@ -54,6 +73,9 @@ function App() {
       date,
       time,
       audienceInput,
+      venueSetting,
+      audienceType,
+      additionalRequirements,
     };
 
     try {
@@ -74,14 +96,63 @@ function App() {
         throw new Error(errorData.error || "Failed to save results");
       }
 
-      setSaveMessage("Results saved");
-      setTimeout(() => setSaveMessage(""), 3000);
+      addToast("Results saved successfully", "success");
     } catch (err) {
       console.error("Error saving results:", err);
-      setSaveMessage("Failed to save results");
-      setTimeout(() => setSaveMessage(""), 3000);
+      addToast("Something went wrong, please try again", "error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    setSharing(true);
+
+    const searchParams = {
+      venueType,
+      country,
+      state,
+      city,
+      date,
+      time,
+      audienceInput,
+      venueSetting,
+      audienceType,
+      additionalRequirements,
+    };
+
+    try {
+      const response = await fetch("http://localhost:3001/api/shares", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          searchParams,
+          results: geminiResponse,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create share link");
+      }
+
+      const data = await response.json();
+      const shareUrl = data.shareUrl;
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      addToast("Link copied to clipboard!", "success");
+
+      // Reset button text after 2 seconds
+      setTimeout(() => {
+        setSharing(false);
+      }, 2000);
+    } catch (err) {
+      console.error("Error sharing results:", err);
+      addToast("Failed to create share link", "error");
+      setSharing(false);
     }
   };
 
@@ -98,6 +169,9 @@ function App() {
       date: date.toString(),
       time,
       audienceInput,
+      venueSetting,
+      audienceType,
+      additionalRequirements,
     };
 
     try {
@@ -240,7 +314,7 @@ function App() {
             </div>
 
             <div className="column">
-              <h3>Location Details</h3>
+              <h3>Location & Setting</h3>
               <input
                 type="text"
                 placeholder="City (e.g., Cleveland)"
@@ -259,6 +333,40 @@ function App() {
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
               />
+
+              <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
+                Venue Setting
+              </h4>
+              <div className="button-group">
+                {["Indoor", "Outdoor", "Both"].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className={`button-option ${venueSetting === option ? "active" : ""}`}
+                    onClick={() => setVenueSetting(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ marginTop: "16px" }}>
+                <label
+                  htmlFor="additional-requirements"
+                  className="input-label"
+                >
+                  Additional Requirements
+                  <span className="optional-tag">Optional</span>
+                </label>
+                <input
+                  type="text"
+                  id="additional-requirements"
+                  placeholder="Any specific requirements? (e.g. needs a basketball court, must have a green room, waterfront preferred...)"
+                  value={additionalRequirements}
+                  onChange={(e) => setAdditionalRequirements(e.target.value)}
+                  className="additional-requirements-input"
+                />
+              </div>
             </div>
 
             <div className="column">
@@ -296,6 +404,20 @@ function App() {
                 value={audienceInput}
                 onChange={(e) => setAudienceInput(e.target.value)}
               />
+
+              <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
+                Audience Type
+              </h4>
+              <select
+                value={audienceType}
+                onChange={(e) => setAudienceType(e.target.value)}
+                className="audience-select"
+              >
+                <option>General / All Ages</option>
+                <option>21+ Only</option>
+                <option>Corporate / Professional</option>
+                <option>Family Friendly</option>
+              </select>
             </div>
           </div>
 
@@ -304,7 +426,14 @@ function App() {
             disabled={loading}
             className="generate-button"
           >
-            {loading ? "Generating..." : "Find Venues"}
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Finding venues...
+              </>
+            ) : (
+              "Find Venues"
+            )}
           </button>
 
           {error && <p className="error-message">{error}</p>}
@@ -313,25 +442,37 @@ function App() {
               <h2>AI's Top Venue Picks:</h2>
               {renderVenues()}
               <div className="save-section">
-                {!user ? (
-                  <p className="sign-in-message">Sign in to save results</p>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleSaveResults}
-                      disabled={saving}
-                      className="save-button"
-                    >
-                      {saving ? "Saving..." : "Save these results"}
-                    </button>
-                    {saveMessage && (
-                      <p className="save-message">{saveMessage}</p>
-                    )}
-                  </>
-                )}
+                <button
+                  onClick={handleSaveResults}
+                  disabled={saving || !user}
+                  className="save-button"
+                  title={!user ? "Sign in to save results" : ""}
+                >
+                  {saving ? "Saving..." : "Save these results"}
+                </button>
+                <button
+                  onClick={handleShare}
+                  disabled={sharing}
+                  className="share-button"
+                >
+                  {sharing ? "Link copied!" : "Share Results"}
+                </button>
               </div>
             </div>
           )}
+
+          <div className="toast-container">
+            {toasts.map((toast) => (
+              <Toast
+                key={toast.id}
+                message={toast.message}
+                type={toast.type}
+                onClose={() =>
+                  setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+                }
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

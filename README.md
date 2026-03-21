@@ -1,7 +1,5 @@
 # 🎤 VenueID – AI-Powered Venue Recommendation Web App
 
-_HackAI Hackathon Project_
-
 VenueID is a Python-based web application that leverages a Large Language Model (LLM) to recommend ideal venues and estimate audience sizes based on user-provided event descriptions, locations, and metrics. The system streamlines the event venue selection process through intelligent suggestions and an intuitive UI.
 
 ---

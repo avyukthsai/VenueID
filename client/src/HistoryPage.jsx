@@ -156,7 +156,19 @@ function HistoryPage() {
             <UserButton />
           </Show>
         </div>
-        <div className="loading">Loading...</div>
+        <div className="history-page">
+          <h1 className="page-title">Your saved searches</h1>
+          <div className="search-history">
+            {[1, 2, 3].map((index) => (
+              <div key={index} className="skeleton-card">
+                <div className="skeleton-header">
+                  <div className="skeleton-line skeleton-title"></div>
+                  <div className="skeleton-line skeleton-subtitle"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
