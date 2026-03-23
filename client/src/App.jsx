@@ -36,6 +36,10 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [streamingVenues, setStreamingVenues] = useState([]);
+  const [streamingInProgress, setStreamingInProgress] = useState(false);
+  const [currentVenueCount, setCurrentVenueCount] = useState(0);
+  const [totalVenuesToLoad, setTotalVenuesToLoad] = useState(3);
 
   const venueOptions = [
     "Artist Venue",
@@ -55,6 +59,23 @@ function App() {
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
+  };
+
+  const convertStreamingVenuesToText = (venues) => {
+    return venues
+      .map((venue) => {
+        return (
+          `**Venue:** ${venue.name}\n` +
+          `**Why this venue?** ${venue.whyThisVenue}\n` +
+          `**Address:** ${venue.address}\n` +
+          `**Capacity:** ${venue.capacity}\n` +
+          `**Location:** ${venue.location}\n` +
+          `**Features:** ${venue.features}\n` +
+          `**Url To Website:** ${venue.website}\n` +
+          `**Time & Date:** ${venue.dateTime}`
+        );
+      })
+      .join("\n-----\n");
   };
 
   const handleSaveResults = async () => {
@@ -78,6 +99,8 @@ function App() {
       additionalRequirements,
     };
 
+    const resultsText = convertStreamingVenuesToText(streamingVenues);
+
     try {
       const response = await fetch("http://localhost:3001/api/searches", {
         method: "POST",
@@ -87,7 +110,7 @@ function App() {
         body: JSON.stringify({
           userId: user.id,
           searchParams,
-          results: geminiResponse,
+          results: resultsText,
         }),
       });
 
@@ -121,6 +144,8 @@ function App() {
       additionalRequirements,
     };
 
+    const resultsText = convertStreamingVenuesToText(streamingVenues);
+
     try {
       const response = await fetch("http://localhost:3001/api/shares", {
         method: "POST",
@@ -129,7 +154,7 @@ function App() {
         },
         body: JSON.stringify({
           searchParams,
-          results: geminiResponse,
+          results: resultsText,
         }),
       });
 
@@ -200,6 +225,83 @@ function App() {
     }
   };
 
+  const handleStreamingSubmit = async () => {
+    setLoading(true);
+    setError("");
+    setStreamingVenues([]);
+    setCurrentVenueCount(0);
+    setStreamingInProgress(true);
+
+    const payload = {
+      venueType,
+      country,
+      state,
+      city,
+      date: date.toString(),
+      time,
+      audienceInput,
+      venueSetting,
+      audienceType,
+      additionalRequirements,
+    };
+
+    try {
+      const response = await fetch("http://localhost:3001/api/venues/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+
+        // Keep incomplete line in buffer
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.error) {
+                setError(data.error);
+                setStreamingInProgress(false);
+              } else if (data.complete) {
+                setStreamingInProgress(false);
+              } else if (data.venue) {
+                setStreamingVenues((prev) => [...prev, data.venue]);
+                setCurrentVenueCount(data.count);
+                setTotalVenuesToLoad(data.total);
+              }
+            } catch (e) {
+              console.error("Error parsing SSE data:", e);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching streaming data:", err);
+      setError("Failed to get response: " + err.message);
+      setStreamingInProgress(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const parseVenues = (response) => {
     const venues = response
       .split("-----")
@@ -254,6 +356,61 @@ function App() {
         </p>
         <p>
           <strong>Time & Date:</strong> {venue["time_&_date"]}
+        </p>
+      </div>
+    ));
+  };
+
+  const getMatchScoreColor = (score) => {
+    if (score >= 90) return "#10b981"; // green
+    if (score >= 75) return "#f59e0b"; // amber
+    return "#9ca3af"; // gray
+  };
+
+  const renderStreamingVenues = () => {
+    return streamingVenues.map((venue, index) => (
+      <div
+        key={index}
+        className="venue-card venue-card-streaming"
+        style={{
+          animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`,
+        }}
+      >
+        <div className="venue-card-header">
+          <h3>{venue.name}</h3>
+          <div
+            className="match-score-badge"
+            title="Match score based on capacity, event type, and venue features"
+            style={{
+              backgroundColor: getMatchScoreColor(venue.matchScore),
+            }}
+          >
+            {venue.matchScore}%
+          </div>
+        </div>
+        <p>
+          <strong>Why this venue?</strong> {venue.whyThisVenue}
+        </p>
+        <p>
+          <strong>Address:</strong> {venue.address}
+        </p>
+        <p>
+          <strong>Capacity:</strong> {venue.capacity}
+        </p>
+        <p>
+          <strong>Location:</strong> {venue.location}
+        </p>
+        <p>
+          <strong>Features:</strong> {venue.features}
+        </p>
+        <p>
+          <strong>URL to Website:</strong>{" "}
+          <a href={venue.website} target="_blank" rel="noopener noreferrer">
+            {venue.website}
+          </a>
+        </p>
+        <p>
+          <strong>Time & Date:</strong> {venue.dateTime}
         </p>
       </div>
     ));
@@ -422,7 +579,7 @@ function App() {
           </div>
 
           <button
-            onClick={handleSubmit}
+            onClick={handleStreamingSubmit}
             disabled={loading}
             className="generate-button"
           >
@@ -437,10 +594,15 @@ function App() {
           </button>
 
           {error && <p className="error-message">{error}</p>}
-          {geminiResponse && (
+          {streamingInProgress && (
+            <div className="streaming-indicator">
+              Finding venue {currentVenueCount + 1} of {totalVenuesToLoad}...
+            </div>
+          )}
+          {streamingVenues.length > 0 && (
             <div className="response-container">
-              <h2>AI's Top Venue Picks:</h2>
-              {renderVenues()}
+              <h2>Top Venue Picks:</h2>
+              {renderStreamingVenues()}
               <div className="save-section">
                 <button
                   onClick={handleSaveResults}

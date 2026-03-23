@@ -32,8 +32,16 @@ router.post("/", async (req, res) => {
       .select();
 
     if (error) {
-      console.error("Supabase insertion error:", error);
-      return res.status(500).json({ error: "Failed to create share link" });
+      console.error("Supabase insertion error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      return res.status(500).json({
+        error: "Failed to create share link",
+        details: error.message,
+      });
     }
 
     // Return the full share URL

@@ -15,14 +15,14 @@ function SharePage() {
     const fetchSharedSearch = async () => {
       try {
         const response = await fetch(
-          `http://localhost:3001/api/shares/${token}`
+          `http://localhost:3001/api/shares/${token}`,
         );
 
         if (!response.ok) {
           throw new Error(
             response.status === 404
               ? "This link has expired or doesn't exist"
-              : "Failed to load shared search"
+              : "Failed to load shared search",
           );
         }
 
@@ -32,7 +32,7 @@ function SharePage() {
       } catch (err) {
         console.error("Error fetching shared search:", err);
         setError(
-          err.message || "Failed to load shared search. Please try again."
+          err.message || "Failed to load shared search. Please try again.",
         );
       } finally {
         setLoading(false);
@@ -183,7 +183,7 @@ function SharePage() {
         </div>
 
         <div className="response-container">
-          <h2>AI's Top Venue Picks:</h2>
+          <h2>Top Venue Picks:</h2>
           {renderVenues()}
         </div>
       </div>

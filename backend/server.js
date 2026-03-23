@@ -31,12 +31,16 @@ const systemInstruction = `You will be given a venue type from the following lis
 artist venues, party venues, wedding venues, sports tournament,
 esports tournament, theater show, product expo, political rally,
 and hackathon. You will be given the country, state, and city.
-If the selected venue type is an artist venue, then you will receive
-the artist's monthly Spotify listener count instead of the expected audience. Based
-on the monthly listener count, estimate the expected audience amount. Specify that you
-estimated the expected audience amount based on the listener count. Otherwise, you will
-receive the expected audience amount. Also describe how this expected audience value was predicted
-based on the Spotify monthly listeners.
+
+**IMPORTANT - SPOTIFY MENTIONS:**
+Only for Artist Venue events: If the selected venue type is an artist venue, you will receive
+the artist's monthly Spotify listener count instead of the expected audience. Based on the monthly 
+listener count, estimate the expected audience amount in the whyThisVenue explanation.
+
+For ALL OTHER event types (party, wedding, sports, esports, theater, expo, rally, hackathon):
+NEVER mention Spotify, streaming data, listener counts, or music-related predictions in the 
+whyThisVenue explanation. Do not reference the input data source at all. Only discuss the 
+expected audience size, event type, venue features, and location suitability.
 
 You will also receive VENUE SETTING information (Indoor, Outdoor, or Both), which should influence your recommendations:
 - "Indoor" venues should prioritize climate-controlled, enclosed spaces with full amenities
@@ -57,7 +61,7 @@ You MUST respond ONLY with a valid JSON object. No other text before or after. U
   "venues": [
     {
       "name": "Venue Name",
-      "whyThisVenue": "Detailed explanation (3+ sentences) of why this venue is the best choice for the specified event type, audience, and venue setting.",
+      "whyThisVenue": "Detailed explanation (3+ sentences) of why this venue is the best choice for the specified event type, audience, and venue setting. Reference the event type, expected audience size, location, and venue features. Do NOT mention Spotify, streaming data, or music predictions unless this is an Artist Venue event.",
       "address": "Full venue address including street, city, state, and country",
       "capacity": "Estimated or exact capacity number (e.g., '500-1000' or '2500')",
       "location": "Brief description of the venue's neighborhood/district and accessibility",
@@ -82,6 +86,11 @@ Provide exactly 3 venue suggestions.`;
 // Routes
 app.use("/api/searches", searchesRouter);
 app.use("/api/shares", sharesRouter);
+
+// Test endpoint to verify server is working
+app.get("/test", (req, res) => {
+  res.json({ message: "Server is working", timestamp: new Date() });
+});
 
 // Helper function to validate and complete venue data
 function validateAndCompleteVenue(venue) {
@@ -151,6 +160,250 @@ function convertJsonVenuesToText(venuesData) {
     })
     .join("\n-----\n");
 }
+
+// Helper function to calculate match score (0-100)
+function calculateMatchScore(venue, venueType, audienceInput, index) {
+  let score = 0;
+
+  // Capacity match (40% of score)
+  // Parse audience size from input
+  const audienceSize = parseInt(audienceInput) || 100;
+  const capacityStr = venue.capacity.toLowerCase();
+
+  // Try to extract a number from capacity string
+  const capacityMatch = capacityStr.match(/\d+/);
+  const capacityNum = capacityMatch ? parseInt(capacityMatch[0]) : 500;
+
+  // Score capacity match: closest match gets highest score
+  const capacityRatio =
+    Math.min(capacityNum, audienceSize) / Math.max(capacityNum, audienceSize);
+  score += capacityRatio * 40;
+
+  // Event type match (30% of score)
+  // Check if venue description/features mention the event type favorably
+  const venueText =
+    `${venue.name} ${venue.whyThisVenue} ${venue.features}`.toLowerCase();
+  const typeKeywords = {
+    "artist venue": [
+      "artist",
+      "live",
+      "music",
+      "performance",
+      "stage",
+      "sound",
+    ],
+    "party venue": [
+      "bar",
+      "club",
+      "lounge",
+      "nightlife",
+      "dance",
+      "event space",
+    ],
+    "wedding venue": ["wedding", "banquet", "reception", "ballroom", "elegant"],
+    "sports tournament": ["sports", "arena", "field", "stadium", "game"],
+    "esports tournament": ["gaming", "esports", "tournament", "tech"],
+    "theater show": [
+      "theater",
+      "auditorium",
+      "stage",
+      "seating",
+      "performance",
+    ],
+    "product expo": ["expo", "exhibition", "display", "conference", "space"],
+    "political rally": ["rally", "event", "gathering", "large capacity"],
+    hackathon: ["tech", "coding", "space", "wifi", "tech-friendly"],
+  };
+
+  const keywords = typeKeywords[venueType.toLowerCase()] || [];
+  const keywordMatches = keywords.filter((kw) => venueText.includes(kw)).length;
+  score += (keywordMatches / Math.max(keywords.length, 1)) * 30;
+
+  // Location match (15% of score)
+  // Central/accessible locations get higher scores
+  const locationText = venue.location.toLowerCase();
+  const accessibilityKeywords = [
+    "downtown",
+    "central",
+    "convenient",
+    "accessible",
+    "public transit",
+    "highway",
+    "major road",
+  ];
+  const accessibilityMatches = accessibilityKeywords.filter((kw) =>
+    locationText.includes(kw),
+  ).length;
+  score += (accessibilityMatches / accessibilityKeywords.length) * 15;
+
+  // Features match (15% of score)
+  const featuresText = venue.features.toLowerCase();
+  const commonFeatures = [
+    "parking",
+    "food",
+    "catering",
+    "wifi",
+    "sound",
+    "lights",
+    "seating",
+    "accessibility",
+  ];
+  const featureMatches = commonFeatures.filter((f) =>
+    featuresText.includes(f),
+  ).length;
+  score += (featureMatches / commonFeatures.length) * 15;
+
+  // Now map the base score (0-100) to the appropriate range based on venue position
+  let finalScore;
+  if (index === 0) {
+    // First venue: 85-97 range
+    finalScore = 85 + (score / 100) * (97 - 85);
+  } else if (index === 1) {
+    // Second venue: 70-84 range
+    finalScore = 70 + (score / 100) * (84 - 70);
+  } else {
+    // Third venue: 55-69 range
+    finalScore = 55 + (score / 100) * (69 - 55);
+  }
+
+  return Math.round(finalScore);
+}
+
+// Streaming endpoint for progressive venue results
+app.post("/api/venues/stream", async (req, res) => {
+  console.log("Streaming endpoint hit"); // Debug logging
+  const {
+    venueType,
+    country,
+    state,
+    city,
+    date,
+    time,
+    audienceInput,
+    venueSetting,
+    audienceType,
+    additionalRequirements,
+  } = req.body;
+
+  console.log("Request payload:", { venueType, country, city }); // Debug logging
+
+  if (!venueType || !country || !city || !date || !time || !audienceInput) {
+    return res.status(400).json({ error: "All input fields are required." });
+  }
+
+  // Set up SSE headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  const inputText =
+    `Venue Type: ${venueType}; ` +
+    `Country: ${country}; ` +
+    (state ? `State: ${state}; ` : "") +
+    `City: ${city}; ` +
+    `Date: ${date}; ` +
+    `Time: ${time}; ` +
+    `Expected Audience OR Spotify Monthly Listeners: ${audienceInput}; ` +
+    (venueSetting ? `Venue Setting: ${venueSetting}; ` : "") +
+    (audienceType ? `Audience Type: ${audienceType}; ` : "") +
+    (additionalRequirements && additionalRequirements.trim()
+      ? `Additional user requirements to factor into venue selection: ${additionalRequirements};`
+      : "");
+
+  let retryCount = 0;
+  const maxRetries = 1;
+
+  while (retryCount <= maxRetries) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: "gemini-3-flash-preview",
+        generationConfig,
+        systemInstruction: systemInstruction,
+      });
+
+      const chat = model.startChat({
+        history: [],
+      });
+
+      const result = await chat.sendMessage(inputText);
+      const responseText = result.response.text();
+
+      // Try to parse JSON response
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(
+            `Retry attempt ${retryCount}/${maxRetries} due to JSON parse error`,
+          );
+          continue;
+        }
+        res.write(
+          `data: ${JSON.stringify({ error: "Failed to parse AI response format." })}\n\n`,
+        );
+        res.end();
+        return;
+      }
+
+      // Validate venue response
+      const validatedData = validateVenueResponse(parsedResponse);
+      if (!validatedData) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(
+            `Retry attempt ${retryCount}/${maxRetries} due to validation error`,
+          );
+          continue;
+        }
+        res.write(
+          `data: ${JSON.stringify({ error: "Invalid AI response structure." })}\n\n`,
+        );
+        res.end();
+        return;
+      }
+
+      // Send each venue with match score as it's ready
+      validatedData.venues.forEach((venue, index) => {
+        const matchScore = calculateMatchScore(
+          venue,
+          venueType,
+          audienceInput,
+          index,
+        );
+        const venueWithScore = {
+          ...venue,
+          matchScore,
+        };
+        res.write(
+          `data: ${JSON.stringify({ venue: venueWithScore, count: index + 1, total: validatedData.venues.length })}\n\n`,
+        );
+      });
+
+      // Send completion message
+      res.write(`data: ${JSON.stringify({ complete: true })}\n\n`);
+      res.end();
+      return;
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(
+          `Retry attempt ${retryCount}/${maxRetries} due to API error`,
+        );
+        continue;
+      }
+      res.write(
+        `data: ${JSON.stringify({ error: "Failed to communicate with the AI model." })}\n\n`,
+      );
+      res.end();
+      return;
+    }
+  }
+});
 
 app.post("/generate-venue", async (req, res) => {
   const {
@@ -257,4 +510,13 @@ app.post("/generate-venue", async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Backend server listening at http://localhost:${port}`);
+});
+
+// Handle uncaught errors
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
