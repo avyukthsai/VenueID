@@ -47,12 +47,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 32px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 20px 40px;
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   flex-wrap: wrap;
   gap: 12px;
+  width: 100%;
+  position: relative;
+  z-index: 10;
 }
 
 .auth-header > div {
@@ -73,22 +76,23 @@ body {
 }
 
 .auth-header button {
-  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
-  color: white;
-  border: none;
+  background: transparent;
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.95em;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   white-space: nowrap;
 }
 
 .auth-header button:hover {
+  background: rgba(0, 0, 0, 0.05);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .auth-header button:active {
@@ -96,6 +100,12 @@ body {
 }
 
 /* --- App Header --- */
+.content-area {
+  padding-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
 .App-header {
   flex-grow: 1;
   display: flex;
@@ -122,7 +132,7 @@ body {
 }
 
 .form-title-container h1 {
-  font-size: 3.2em;
+  font-size: 2.6em;
   font-weight: 800;
   background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
   background-clip: text;
@@ -166,11 +176,12 @@ body {
 
 .column h3 {
   margin: 0 0 24px 0;
-  font-size: 1.35em;
+  font-size: 1.5em;
   font-weight: 700;
   color: #1f2937;
-  border-bottom: 2px solid #f0f9ff;
-  padding-bottom: 16px;
+  border-left: 3px solid #10b981;
+  padding-left: 10px;
+  padding-bottom: 0;
 }
 
 .column input[type="text"],
@@ -222,11 +233,42 @@ body {
 }
 
 .radio-option input[type="radio"] {
-  margin-right: 12px;
-  accent-color: #10b981;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   width: 20px;
   height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  margin-right: 12px;
   cursor: pointer;
+  background-color: white;
+  transition: all 0.3s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.radio-option input[type="radio"]:hover {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.radio-option input[type="radio"]:checked {
+  background-color: #10b981;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.radio-option input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background-color: white;
+  border-radius: 50%;
 }
 
 .radio-option label {
@@ -460,14 +502,14 @@ body {
 }
 
 .history-link {
-  color: #10b981;
+  color: #333;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95em;
   transition: all 0.3s ease;
   padding: 8px 16px;
   border-radius: 6px;
-  border: 2px solid #10b981;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .history-link:hover {
@@ -636,6 +678,58 @@ body {
 }
 
 .additional-requirements-input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.helper-text {
+  display: block;
+  margin-top: -12px;
+  margin-bottom: 16px;
+  font-size: 0.85em;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+.input-error:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.error-text {
+  display: block;
+  margin-top: -12px;
+  margin-bottom: 16px;
+  font-size: 0.85em;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.country-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.country-select:hover {
+  border-color: #10b981;
+}
+
+.country-select:focus {
   outline: none;
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);

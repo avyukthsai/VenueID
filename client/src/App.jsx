@@ -21,7 +21,7 @@ function Toast({ message, type, onClose }) {
 function App() {
   const { user } = useUser();
   const [venueType, setVenueType] = useState("Artist Venue");
-  const [country, setCountry] = useState("");
+  const [country, setCountry] = useState("US");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [date, setDate] = useState("");
@@ -30,6 +30,7 @@ function App() {
   const [venueSetting, setVenueSetting] = useState("Both");
   const [audienceType, setAudienceType] = useState("General / All Ages");
   const [additionalRequirements, setAdditionalRequirements] = useState("");
+  const [cityError, setCityError] = useState("");
   const [geminiResponse, setGeminiResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -182,6 +183,20 @@ function App() {
   };
 
   const handleSubmit = async () => {
+    // Client-side validation
+    const missingFields = [];
+    if (!venueType) missingFields.push("Event Type");
+    if (!city) missingFields.push("City");
+    if (!state) missingFields.push("State");
+    if (!date) missingFields.push("Date");
+    if (!time) missingFields.push("Time");
+    if (!audienceInput) missingFields.push("Expected Audience");
+
+    if (missingFields.length > 0) {
+      setError(`Please fill in: ${missingFields.join(", ")}`);
+      return;
+    }
+
     setLoading(true);
     setError("");
     setGeminiResponse("");
@@ -226,6 +241,30 @@ function App() {
   };
 
   const handleStreamingSubmit = async () => {
+    // Clear previous errors
+    setError("");
+    setCityError("");
+
+    // Client-side validation
+    const missingFields = [];
+    if (!venueType) missingFields.push("Event Type");
+    if (!city) missingFields.push("City");
+    if (!state) missingFields.push("State");
+    if (!date) missingFields.push("Date");
+    if (!time) missingFields.push("Time");
+    if (!audienceInput) missingFields.push("Expected Audience");
+
+    // City validation - must be more than 3 characters for best results
+    if (city && city.trim().length <= 3) {
+      setCityError("Please enter the full city name");
+      return;
+    }
+
+    if (missingFields.length > 0) {
+      setError(`Please fill in: ${missingFields.join(", ")}`);
+      return;
+    }
+
     setLoading(true);
     setError("");
     setStreamingVenues([]);
@@ -245,6 +284,8 @@ function App() {
       additionalRequirements,
     };
 
+    console.log("Submitting stream request with payload:", payload);
+
     try {
       const response = await fetch("http://localhost:3001/api/venues/stream", {
         method: "POST",
@@ -255,7 +296,21 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(
+          "Stream request failed with status:",
+          response.status,
+          "Body:",
+          errorText,
+        );
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(
+            errorData.error || `HTTP error! status: ${response.status}`,
+          );
+        } catch {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
       }
 
       const reader = response.body.getReader();
@@ -437,203 +492,230 @@ function App() {
           </Show>
         </div>
       </div>
-      <div className="App-header">
-        <div className="main-content-wrapper">
-          <div className="form-title-container">
-            <h1>Find Your Perfect Venue</h1>
-            <p className="subtitle">
-              Tell us about your event, and we'll find the ideal spot!
-            </p>
-          </div>
-
-          <div className="form-container">
-            <div className="column">
-              <h3>Select Event Type</h3>
-              <div className="radio-group">
-                {venueOptions.map((option) => (
-                  <div
-                    key={option}
-                    className="radio-option"
-                    onClick={() => setVenueType(option)}
-                  >
-                    <input
-                      type="radio"
-                      id={option}
-                      name="venueType"
-                      value={option}
-                      checked={venueType === option}
-                      onChange={(e) => setVenueType(e.target.value)}
-                    />
-                    <label htmlFor={option}>{option}</label>
-                  </div>
-                ))}
-              </div>
+      <div className="content-area">
+        <div className="App-header">
+          <div className="main-content-wrapper">
+            <div className="form-title-container">
+              <h1>Find Your Perfect Venue</h1>
+              <p className="subtitle">
+                Tell us about your event, and we'll find the ideal spot!
+              </p>
             </div>
 
-            <div className="column">
-              <h3>Location & Setting</h3>
-              <input
-                type="text"
-                placeholder="City (e.g., Cleveland)"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="State (e.g., OH)"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-              />
-
-              <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
-                Venue Setting
-              </h4>
-              <div className="button-group">
-                {["Indoor", "Outdoor", "Both"].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={`button-option ${venueSetting === option ? "active" : ""}`}
-                    onClick={() => setVenueSetting(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
+            <div className="form-container">
+              <div className="column">
+                <h3>Select Event Type</h3>
+                <div className="radio-group">
+                  {venueOptions.map((option) => (
+                    <div
+                      key={option}
+                      className="radio-option"
+                      onClick={() => setVenueType(option)}
+                    >
+                      <input
+                        type="radio"
+                        id={option}
+                        name="venueType"
+                        value={option}
+                        checked={venueType === option}
+                        onChange={(e) => setVenueType(e.target.value)}
+                      />
+                      <label htmlFor={option}>{option}</label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div style={{ marginTop: "16px" }}>
+              <div className="column">
+                <h3>Location & Setting</h3>
+                <input
+                  type="text"
+                  placeholder="Full city name (e.g., Cleveland)"
+                  value={city}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    if (e.target.value.trim().length > 3) {
+                      setCityError("");
+                    }
+                  }}
+                  className={cityError ? "input-error" : ""}
+                />
+                {cityError && <span className="error-text">{cityError}</span>}
+                <p className="helper-text">
+                  Enter full city name for best results
+                </p>
+                <input
+                  type="text"
+                  placeholder="State code (e.g., OH)"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
                 <label
-                  htmlFor="additional-requirements"
+                  htmlFor="country-select"
                   className="input-label"
+                  style={{ marginTop: "12px" }}
                 >
-                  Additional Requirements
-                  <span className="optional-tag">Optional</span>
+                  Country:
+                </label>
+                <select
+                  id="country-select"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="country-select"
+                >
+                  <option value="US">United States</option>
+                  <option value="UK">United Kingdom</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Australia">Australia</option>
+                </select>
+
+                <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
+                  Venue Setting
+                </h4>
+                <div className="button-group">
+                  {["Indoor", "Outdoor", "Both"].map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`button-option ${venueSetting === option ? "active" : ""}`}
+                      onClick={() => setVenueSetting(option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: "16px" }}>
+                  <label
+                    htmlFor="additional-requirements"
+                    className="input-label"
+                  >
+                    Additional Requirements
+                    <span className="optional-tag">Optional</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="additional-requirements"
+                    placeholder="Any specific requirements? (e.g. needs a basketball court, must have a green room, waterfront preferred...)"
+                    value={additionalRequirements}
+                    onChange={(e) => setAdditionalRequirements(e.target.value)}
+                    className="additional-requirements-input"
+                  />
+                </div>
+              </div>
+
+              <div className="column">
+                <h3>Event Specifics</h3>
+                <label htmlFor="event-date" className="input-label">
+                  Date:
+                </label>
+                <input
+                  type="date"
+                  id="event-date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+                <label htmlFor="event-time" className="input-label">
+                  Time (EST):
                 </label>
                 <input
                   type="text"
-                  id="additional-requirements"
-                  placeholder="Any specific requirements? (e.g. needs a basketball court, must have a green room, waterfront preferred...)"
-                  value={additionalRequirements}
-                  onChange={(e) => setAdditionalRequirements(e.target.value)}
-                  className="additional-requirements-input"
+                  id="event-time"
+                  placeholder="e.g., 7:00 PM"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
                 />
+                <label htmlFor="audience-input" className="input-label">
+                  {venueType === "Artist Venue"
+                    ? "Spotify Monthly Listeners:"
+                    : "Expected Audience:"}
+                </label>
+                <input
+                  type="text"
+                  id="audience-input"
+                  placeholder={
+                    venueType === "Artist Venue"
+                      ? "e.g., 21000000"
+                      : "e.g., 5000"
+                  }
+                  value={audienceInput}
+                  onChange={(e) => setAudienceInput(e.target.value)}
+                />
+
+                <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
+                  Audience Type
+                </h4>
+                <select
+                  value={audienceType}
+                  onChange={(e) => setAudienceType(e.target.value)}
+                  className="audience-select"
+                >
+                  <option>General / All Ages</option>
+                  <option>21+ Only</option>
+                  <option>Corporate / Professional</option>
+                  <option>Family Friendly</option>
+                </select>
               </div>
             </div>
 
-            <div className="column">
-              <h3>Event Specifics</h3>
-              <label htmlFor="event-date" className="input-label">
-                Date:
-              </label>
-              <input
-                type="date"
-                id="event-date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-              <label htmlFor="event-time" className="input-label">
-                Time (EST):
-              </label>
-              <input
-                type="text"
-                id="event-time"
-                placeholder="e.g., 7:00 PM"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-              />
-              <label htmlFor="audience-input" className="input-label">
-                {venueType === "Artist Venue"
-                  ? "Spotify Monthly Listeners:"
-                  : "Expected Audience:"}
-              </label>
-              <input
-                type="text"
-                id="audience-input"
-                placeholder={
-                  venueType === "Artist Venue" ? "e.g., 21000000" : "e.g., 5000"
-                }
-                value={audienceInput}
-                onChange={(e) => setAudienceInput(e.target.value)}
-              />
+            <button
+              onClick={handleStreamingSubmit}
+              disabled={loading}
+              className="generate-button"
+            >
+              {loading ? (
+                <>
+                  <span className="spinner"></span>
+                  Finding venues...
+                </>
+              ) : (
+                "Find Venues"
+              )}
+            </button>
 
-              <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
-                Audience Type
-              </h4>
-              <select
-                value={audienceType}
-                onChange={(e) => setAudienceType(e.target.value)}
-                className="audience-select"
-              >
-                <option>General / All Ages</option>
-                <option>21+ Only</option>
-                <option>Corporate / Professional</option>
-                <option>Family Friendly</option>
-              </select>
-            </div>
-          </div>
-
-          <button
-            onClick={handleStreamingSubmit}
-            disabled={loading}
-            className="generate-button"
-          >
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-                Finding venues...
-              </>
-            ) : (
-              "Find Venues"
+            {error && <p className="error-message">{error}</p>}
+            {streamingInProgress && (
+              <div className="streaming-indicator">
+                Finding venue {currentVenueCount + 1} of {totalVenuesToLoad}
+                ...
+              </div>
             )}
-          </button>
-
-          {error && <p className="error-message">{error}</p>}
-          {streamingInProgress && (
-            <div className="streaming-indicator">
-              Finding venue {currentVenueCount + 1} of {totalVenuesToLoad}...
-            </div>
-          )}
-          {streamingVenues.length > 0 && (
-            <div className="response-container">
-              <h2>Top Venue Picks:</h2>
-              {renderStreamingVenues()}
-              <div className="save-section">
-                <button
-                  onClick={handleSaveResults}
-                  disabled={saving || !user}
-                  className="save-button"
-                  title={!user ? "Sign in to save results" : ""}
-                >
-                  {saving ? "Saving..." : "Save these results"}
-                </button>
-                <button
-                  onClick={handleShare}
-                  disabled={sharing}
-                  className="share-button"
-                >
-                  {sharing ? "Link copied!" : "Share Results"}
-                </button>
+            {streamingVenues.length > 0 && (
+              <div className="response-container">
+                <h2>Top Venue Picks:</h2>
+                {renderStreamingVenues()}
+                <div className="save-section">
+                  <button
+                    onClick={handleSaveResults}
+                    disabled={saving || !user}
+                    className="save-button"
+                    title={!user ? "Sign in to save results" : ""}
+                  >
+                    {saving ? "Saving..." : "Save these results"}
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    disabled={sharing}
+                    className="share-button"
+                  >
+                    {sharing ? "Link copied!" : "Share Results"}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="toast-container">
-            {toasts.map((toast) => (
-              <Toast
-                key={toast.id}
-                message={toast.message}
-                type={toast.type}
-                onClose={() =>
-                  setToasts((prev) => prev.filter((t) => t.id !== toast.id))
-                }
-              />
-            ))}
+            <div className="toast-container">
+              {toasts.map((toast) => (
+                <Toast
+                  key={toast.id}
+                  message={toast.message}
+                  type={toast.type}
+                  onClose={() =>
+                    setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+                  }
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

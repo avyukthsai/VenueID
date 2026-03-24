@@ -7,6 +7,15 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const cors = require("cors");
 const searchesRouter = require("./searches");
 const sharesRouter = require("./shares");
+const {
+  getVenuesByLocation,
+  formatVenuesForPrompt: formatTicketmasterVenues,
+} = require("./services/ticketmaster");
+const {
+  getVenuesByCategory,
+  mergeAndDeduplicateVenues,
+  formatVenuesForPrompt: formatFoursquareVenues,
+} = require("./services/foursquare");
 
 const app = express();
 const port = 3001; // port for your backend
@@ -285,10 +294,32 @@ app.post("/api/venues/stream", async (req, res) => {
     additionalRequirements,
   } = req.body;
 
-  console.log("Request payload:", { venueType, country, city }); // Debug logging
+  console.log("Request payload:", {
+    venueType,
+    country,
+    state,
+    city,
+    date,
+    time,
+    audienceInput,
+  }); // Debug logging
 
-  if (!venueType || !country || !city || !date || !time || !audienceInput) {
-    return res.status(400).json({ error: "All input fields are required." });
+  // Detailed validation and error reporting
+  const missingFields = [];
+  if (!venueType) missingFields.push("venueType");
+  if (!country) missingFields.push("country");
+  if (!city) missingFields.push("city");
+  if (!date) missingFields.push("date");
+  if (!time) missingFields.push("time");
+  if (!audienceInput) missingFields.push("audienceInput");
+
+  if (missingFields.length > 0) {
+    console.error("Missing fields:", missingFields);
+    return res.status(400).json({
+      error: "All input fields are required.",
+      missingFields: missingFields,
+      received: { venueType, country, state, city, date, time, audienceInput },
+    });
   }
 
   // Set up SSE headers
@@ -297,7 +328,40 @@ app.post("/api/venues/stream", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  const inputText =
+  // Fetch real venues from both Ticketmaster and Foursquare simultaneously
+  let allVenues = [];
+  let venueContext = "";
+  try {
+    const [ticketmasterVenues, foursquareVenues] = await Promise.all([
+      getVenuesByLocation(city, state, venueType),
+      getVenuesByCategory(city, state, venueType),
+    ]);
+
+    console.log(
+      `Fetched ${ticketmasterVenues.length} venues from Ticketmaster`,
+    );
+    console.log(`Fetched ${foursquareVenues.length} venues from Foursquare`);
+
+    // Merge and deduplicate results
+    allVenues = mergeAndDeduplicateVenues(ticketmasterVenues, foursquareVenues);
+    console.log(`Combined to ${allVenues.length} unique venues`);
+
+    if (allVenues.length >= 5) {
+      venueContext = formatTicketmasterVenues(
+        allVenues.slice(0, 15), // Use top 15 combined venues
+      );
+      // Update context message to reflect multiple sources
+      venueContext = venueContext.replace(
+        "REAL VENUES AVAILABLE IN THE AREA",
+        "REAL VENUES FROM MULTIPLE VERIFIED SOURCES",
+      );
+    }
+  } catch (error) {
+    console.error("Error fetching venues from APIs:", error);
+    // Continue without real venue data if APIs fail
+  }
+
+  let inputText =
     `Venue Type: ${venueType}; ` +
     `Country: ${country}; ` +
     (state ? `State: ${state}; ` : "") +
@@ -311,6 +375,18 @@ app.post("/api/venues/stream", async (req, res) => {
       ? `Additional user requirements to factor into venue selection: ${additionalRequirements};`
       : "");
 
+  let enhancedSystemInstruction = systemInstruction;
+
+  // If we have good real venue data, modify the prompt to be grounded in it
+  if (venueContext) {
+    inputText += venueContext;
+    enhancedSystemInstruction =
+      systemInstruction +
+      `\n\nIMPORTANT - REAL VENUE DATA PROVIDED:\nReal venue data from multiple verified sources has been provided above. You MUST choose the 3 best venues from the provided list. Only recommend venues from the provided list. Do NOT make up or imagine venues that are not in the list. Explain why each of the 3 venues from the list is ideal for this event.`;
+  } else if (allVenues.length > 0 && allVenues.length < 5) {
+    inputText += `\nNote: Only ${allVenues.length} real venues were found from multiple sources in this location. Real venue data is limited for this area. You may recommend venues based on typical venue types for this event type and location.`;
+  }
+
   let retryCount = 0;
   const maxRetries = 1;
 
@@ -319,7 +395,7 @@ app.post("/api/venues/stream", async (req, res) => {
       const model = genAI.getGenerativeModel({
         model: "gemini-3-flash-preview",
         generationConfig,
-        systemInstruction: systemInstruction,
+        systemInstruction: enhancedSystemInstruction,
       });
 
       const chat = model.startChat({
@@ -329,12 +405,31 @@ app.post("/api/venues/stream", async (req, res) => {
       const result = await chat.sendMessage(inputText);
       const responseText = result.response.text();
 
+      console.log("Raw Gemini response length:", responseText.length);
+      console.log("First 300 chars:", responseText.substring(0, 300));
+
       // Try to parse JSON response
       let parsedResponse;
+      let cleanedText = responseText;
+
+      // Try to extract JSON from markdown code blocks
+      if (cleanedText.includes("```json")) {
+        cleanedText = cleanedText
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
+      } else if (cleanedText.includes("```")) {
+        cleanedText = cleanedText.replace(/```\n?/g, "").trim();
+      }
+
       try {
-        parsedResponse = JSON.parse(responseText);
+        parsedResponse = JSON.parse(cleanedText);
       } catch (parseError) {
-        console.error("Failed to parse JSON response:", parseError);
+        console.error("Failed to parse JSON response:", parseError.message);
+        console.error(
+          "Attempted to parse text (first 300 chars):",
+          cleanedText.substring(0, 300),
+        );
         if (retryCount < maxRetries) {
           retryCount++;
           console.log(
@@ -419,11 +514,68 @@ app.post("/generate-venue", async (req, res) => {
     additionalRequirements,
   } = req.body;
 
-  if (!venueType || !country || !city || !date || !time || !audienceInput) {
-    return res.status(400).json({ error: "All input fields are required." });
+  console.log("Generate endpoint hit with payload:", {
+    venueType,
+    country,
+    state,
+    city,
+    date,
+    time,
+    audienceInput,
+  });
+
+  // Detailed validation and error reporting
+  const missingFields = [];
+  if (!venueType) missingFields.push("venueType");
+  if (!country) missingFields.push("country");
+  if (!city) missingFields.push("city");
+  if (!date) missingFields.push("date");
+  if (!time) missingFields.push("time");
+  if (!audienceInput) missingFields.push("audienceInput");
+
+  if (missingFields.length > 0) {
+    console.error("Missing fields:", missingFields);
+    return res.status(400).json({
+      error: "All input fields are required.",
+      missingFields: missingFields,
+      received: { venueType, country, state, city, date, time, audienceInput },
+    });
   }
 
-  const inputText =
+  // Fetch real venues from both Ticketmaster and Foursquare simultaneously
+  let allVenues = [];
+  let venueContext = "";
+  try {
+    const [ticketmasterVenues, foursquareVenues] = await Promise.all([
+      getVenuesByLocation(city, state, venueType),
+      getVenuesByCategory(city, state, venueType),
+    ]);
+
+    console.log(
+      `Fetched ${ticketmasterVenues.length} venues from Ticketmaster`,
+    );
+    console.log(`Fetched ${foursquareVenues.length} venues from Foursquare`);
+
+    // Merge and deduplicate results
+    allVenues = mergeAndDeduplicateVenues(ticketmasterVenues, foursquareVenues);
+    console.log(`Combined to ${allVenues.length} unique venues`);
+
+    if (allVenues.length >= 5) {
+      venueContext = formatTicketmasterVenues(
+        allVenues.slice(0, 15), // Use top 15 combined venues
+      );
+      // Update context message to reflect multiple sources
+      venueContext = venueContext.replace(
+        "REAL VENUES AVAILABLE IN THE AREA",
+        "REAL VENUES FROM MULTIPLE VERIFIED SOURCES",
+      );
+    }
+  } catch (error) {
+    console.error("Error fetching venues from APIs:", error);
+    // Continue without real venue data if APIs fail
+  }
+
+  let inputText =
     `Venue Type: ${venueType}; ` +
     `Country: ${country}; ` +
     (state ? `State: ${state}; ` : "") +
@@ -437,6 +589,18 @@ app.post("/generate-venue", async (req, res) => {
       ? `Additional user requirements to factor into venue selection: ${additionalRequirements};`
       : "");
 
+  let enhancedSystemInstruction = systemInstruction;
+
+  // If we have good real venue data, modify the prompt to be grounded in it
+  if (venueContext) {
+    inputText += venueContext;
+    enhancedSystemInstruction =
+      systemInstruction +
+      `\n\nIMPORTANT - REAL VENUE DATA PROVIDED:\nReal venue data from multiple verified sources has been provided above. You MUST choose the 3 best venues from the provided list. Only recommend venues from the provided list. Do NOT make up or imagine venues that are not in the list. Explain why each of the 3 venues from the list is ideal for this event.`;
+  } else if (allVenues.length > 0 && allVenues.length < 5) {
+    inputText += `\nNote: Only ${allVenues.length} real venues were found from multiple sources in this location. Real venue data is limited for this area. You may recommend venues based on typical venue types for this event type and location.`;
+  }
+
   let retryCount = 0;
   const maxRetries = 1;
 
@@ -445,7 +609,7 @@ app.post("/generate-venue", async (req, res) => {
       const model = genAI.getGenerativeModel({
         model: "gemini-3-flash-preview",
         generationConfig,
-        systemInstruction: systemInstruction,
+        systemInstruction: enhancedSystemInstruction,
       });
 
       const chat = model.startChat({
@@ -455,12 +619,31 @@ app.post("/generate-venue", async (req, res) => {
       const result = await chat.sendMessage(inputText);
       const responseText = result.response.text();
 
+      console.log("Raw Gemini response length:", responseText.length);
+      console.log("First 300 chars:", responseText.substring(0, 300));
+
       // Try to parse JSON response
       let parsedResponse;
+      let cleanedText = responseText;
+
+      // Try to extract JSON from markdown code blocks
+      if (cleanedText.includes("```json")) {
+        cleanedText = cleanedText
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
+      } else if (cleanedText.includes("```")) {
+        cleanedText = cleanedText.replace(/```\n?/g, "").trim();
+      }
+
       try {
-        parsedResponse = JSON.parse(responseText);
+        parsedResponse = JSON.parse(cleanedText);
       } catch (parseError) {
-        console.error("Failed to parse JSON response:", parseError);
+        console.error("Failed to parse JSON response:", parseError.message);
+        console.error(
+          "Attempted to parse text (first 300 chars):",
+          cleanedText.substring(0, 300),
+        );
         if (retryCount < maxRetries) {
           retryCount++;
           console.log(
