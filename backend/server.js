@@ -2,11 +2,17 @@ const dotenv = require("dotenv");
 
 dotenv.config(); // Load environment variables from .env file FIRST
 
+console.log(
+  "STARTUP: SEARCH_LIMIT_ENABLED =",
+  JSON.stringify(process.env.SEARCH_LIMIT_ENABLED),
+);
+
 const express = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const cors = require("cors");
 const searchesRouter = require("./searches");
 const sharesRouter = require("./shares");
+const supabase = require("./supabase");
 const {
   getVenuesByLocation,
   formatVenuesForPrompt: formatTicketmasterVenues,
@@ -278,7 +284,104 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
   return Math.round(finalScore);
 }
 
-// Streaming endpoint for progressive venue results
+// Helper function to check and increment search count
+async function checkAndIncrementSearchCount(userId) {
+  try {
+    // Check if user exists in search counts
+    const { data: existingUser, error: fetchError } = await supabase
+      .from("user_search_counts")
+      .select("search_count")
+      .eq("user_id", userId)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 means no rows found, which is expected for new users
+      console.error("Error fetching search count:", fetchError);
+      return { error: "Failed to check search limit", code: "DB_ERROR" };
+    }
+
+    let currentCount = 0;
+    if (existingUser) {
+      currentCount = existingUser.search_count;
+    } else {
+      // Insert new user with count 0
+      const { error: insertError } = await supabase
+        .from("user_search_counts")
+        .insert([{ user_id: userId, search_count: 0 }]);
+
+      if (insertError) {
+        console.error("Error inserting new user search count:", insertError);
+        return { error: "Failed to initialize search count", code: "DB_ERROR" };
+      }
+    }
+
+    // Check if limit is reached (5 searches)
+    if (currentCount >= 5) {
+      return { limitReached: true, currentCount };
+    }
+
+    // Increment search count
+    const { error: updateError } = await supabase
+      .from("user_search_counts")
+      .update({ search_count: currentCount + 1 })
+      .eq("user_id", userId);
+
+    if (updateError) {
+      console.error("Error incrementing search count:", updateError);
+      return { error: "Failed to update search count", code: "DB_ERROR" };
+    }
+
+    return { limitReached: false, newCount: currentCount + 1 };
+  } catch (error) {
+    console.error("Unexpected error in checkAndIncrementSearchCount:", error);
+    return { error: "Unexpectederror", code: "UNKNOWN_ERROR" };
+  }
+}
+
+// Helper function to get user's current search count
+async function getUserSearchCount(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("user_search_counts")
+      .select("search_count")
+      .eq("user_id", userId)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      console.error("Error fetching search count:", error);
+      return { error: "Failed to fetch search count" };
+    }
+
+    return { searchCount: data?.search_count || 0 };
+  } catch (error) {
+    console.error("Error in getUserSearchCount:", error);
+    return { error: "Failed to fetch search count" };
+  }
+}
+
+// Helper function to add email to waitlist
+async function addToWaitlist(email) {
+  try {
+    const { data, error } = await supabase
+      .from("waitlist")
+      .insert([{ email }])
+      .select();
+
+    if (error) {
+      if (error.code === "23505") {
+        // Unique constraint violation - email already exists
+        return { success: false, message: "Email already on waitlist" };
+      }
+      console.error("Error adding to waitlist:", error);
+      return { success: false, message: "Failed to add email to waitlist" };
+    }
+
+    return { success: true, message: "Email added to waitlist" };
+  } catch (error) {
+    console.error("Error in addToWaitlist:", error);
+    return { success: false, message: "Failed to add email to waitlist" };
+  }
+}
 app.post("/api/venues/stream", async (req, res) => {
   console.log("Streaming endpoint hit"); // Debug logging
   const {
@@ -292,6 +395,7 @@ app.post("/api/venues/stream", async (req, res) => {
     venueSetting,
     audienceType,
     additionalRequirements,
+    userId,
   } = req.body;
 
   console.log("Request payload:", {
@@ -302,6 +406,7 @@ app.post("/api/venues/stream", async (req, res) => {
     date,
     time,
     audienceInput,
+    userId,
   }); // Debug logging
 
   // Detailed validation and error reporting
@@ -312,23 +417,52 @@ app.post("/api/venues/stream", async (req, res) => {
   if (!date) missingFields.push("date");
   if (!time) missingFields.push("time");
   if (!audienceInput) missingFields.push("audienceInput");
+  if (!userId) missingFields.push("userId");
 
   if (missingFields.length > 0) {
     console.error("Missing fields:", missingFields);
     return res.status(400).json({
       error: "All input fields are required.",
       missingFields: missingFields,
-      received: { venueType, country, state, city, date, time, audienceInput },
+      received: {
+        venueType,
+        country,
+        state,
+        city,
+        date,
+        time,
+        audienceInput,
+        userId,
+      },
     });
   }
 
-  // Set up SSE headers
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // Check search limit before proceeding (only if enabled)
+  const limitEnabledValue = process.env.SEARCH_LIMIT_ENABLED;
+  console.log(
+    "DEBUG: SEARCH_LIMIT_ENABLED =",
+    JSON.stringify(limitEnabledValue),
+    ", Type:",
+    typeof limitEnabledValue,
+  );
+  if (limitEnabledValue === "true") {
+    console.log("DEBUG: Limit check is ENABLED");
+    const limitCheck = await checkAndIncrementSearchCount(userId);
+    if (limitCheck.error) {
+      return res.status(500).json({ error: limitCheck.error });
+    }
+    if (limitCheck.limitReached) {
+      console.log("DEBUG: Limit reached, returning 429");
+      return res.status(429).json({
+        error: "Search limit reached",
+        message: "You've used all 5 free searches. Upgrade coming soon.",
+      });
+    }
+  } else {
+    console.log("DEBUG: Limit check is DISABLED, allowing search to proceed");
+  }
 
-  // Fetch real venues from both Ticketmaster and Foursquare simultaneously
+  // Fetch and process venues (non-streaming)
   let allVenues = [];
   let venueContext = "";
   try {
@@ -437,11 +571,9 @@ app.post("/api/venues/stream", async (req, res) => {
           );
           continue;
         }
-        res.write(
-          `data: ${JSON.stringify({ error: "Failed to parse AI response format." })}\n\n`,
-        );
-        res.end();
-        return;
+        return res
+          .status(500)
+          .json({ error: "Failed to parse AI response format." });
       }
 
       // Validate venue response
@@ -454,14 +586,12 @@ app.post("/api/venues/stream", async (req, res) => {
           );
           continue;
         }
-        res.write(
-          `data: ${JSON.stringify({ error: "Invalid AI response structure." })}\n\n`,
-        );
-        res.end();
-        return;
+        return res
+          .status(500)
+          .json({ error: "Invalid AI response structure." });
       }
 
-      // Send each venue with match score as it's ready
+      // Process each venue with match score
       validatedData.venues.forEach((venue, index) => {
         const matchScore = calculateMatchScore(
           venue,
@@ -469,19 +599,15 @@ app.post("/api/venues/stream", async (req, res) => {
           audienceInput,
           index,
         );
-        const venueWithScore = {
-          ...venue,
-          matchScore,
-        };
-        res.write(
-          `data: ${JSON.stringify({ venue: venueWithScore, count: index + 1, total: validatedData.venues.length })}\n\n`,
-        );
+        venue.matchScore = matchScore;
       });
 
-      // Send completion message
-      res.write(`data: ${JSON.stringify({ complete: true })}\n\n`);
-      res.end();
-      return;
+      // Send all venues and response as JSON
+      return res.json({
+        response: responseText,
+        venues: validatedData.venues,
+        success: true,
+      });
     } catch (error) {
       console.error("Error calling Gemini API:", error);
       if (retryCount < maxRetries) {
@@ -491,11 +617,9 @@ app.post("/api/venues/stream", async (req, res) => {
         );
         continue;
       }
-      res.write(
-        `data: ${JSON.stringify({ error: "Failed to communicate with the AI model." })}\n\n`,
-      );
-      res.end();
-      return;
+      return res
+        .status(500)
+        .json({ error: "Failed to communicate with the AI model." });
     }
   }
 });
@@ -689,6 +813,50 @@ app.post("/generate-venue", async (req, res) => {
         .json({ error: "Failed to communicate with the AI model." });
     }
   }
+});
+
+// Get user's current search count
+app.get("/api/searches/count/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId is required" });
+  }
+
+  const limitsEnabled = process.env.SEARCH_LIMIT_ENABLED === "true";
+
+  // If limits are disabled, return 0 searches and limitsEnabled flag
+  if (!limitsEnabled) {
+    console.log(
+      "DEBUG: Limits disabled, returning searchCount: 0, limitsEnabled: false",
+    );
+    return res.json({ searchCount: 0, limitsEnabled: false });
+  }
+
+  const result = await getUserSearchCount(userId);
+
+  if (result.error) {
+    return res.status(500).json({ error: result.error });
+  }
+
+  res.json({ searchCount: result.searchCount, limitsEnabled: true });
+});
+
+// Add email to waitlist
+app.post("/api/waitlist", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    return res.status(400).json({ error: "Valid email is required" });
+  }
+
+  const result = await addToWaitlist(email);
+
+  if (!result.success) {
+    return res.status(400).json({ error: result.message });
+  }
+
+  res.json({ message: result.message });
 });
 
 app.listen(port, () => {

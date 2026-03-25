@@ -41,6 +41,72 @@ function App() {
   const [streamingInProgress, setStreamingInProgress] = useState(false);
   const [currentVenueCount, setCurrentVenueCount] = useState(0);
   const [totalVenuesToLoad, setTotalVenuesToLoad] = useState(3);
+  const [searchCount, setSearchCount] = useState(0);
+  const [limitsEnabled, setLimitsEnabled] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
+  const [loadingSearchCount, setLoadingSearchCount] = useState(false);
+
+  // Fetch search count on component mount and whenever userId changes
+  React.useEffect(() => {
+    if (user?.id) {
+      fetchSearchCount(user.id);
+    }
+  }, [user?.id]);
+
+  const fetchSearchCount = async (userId) => {
+    setLoadingSearchCount(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/searches/count/${userId}`,
+      );
+      const data = await response.json();
+      console.log("DEBUG: Received from /api/searches/count:", data);
+      if (data.searchCount !== undefined) {
+        setSearchCount(data.searchCount);
+        setLimitsEnabled(data.limitsEnabled ?? false);
+        console.log(
+          "DEBUG: Setting limitsEnabled to",
+          data.limitsEnabled ?? false,
+        );
+        setLimitReached(data.limitsEnabled && data.searchCount >= 5);
+      }
+    } catch (err) {
+      console.error("Error fetching search count:", err);
+    } finally {
+      setLoadingSearchCount(false);
+    }
+  };
+
+  const handleWaitlistSubmit = async () => {
+    if (!waitlistEmail || !waitlistEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      addToast("Please enter a valid email", "error");
+      return;
+    }
+
+    setWaitlistSubmitting(true);
+    try {
+      const response = await fetch("http://localhost:3001/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: waitlistEmail }),
+      });
+
+      if (response.ok) {
+        addToast("Email added to waitlist! We'll notify you soon.", "success");
+        setWaitlistEmail("");
+      } else {
+        const data = await response.json();
+        addToast(data.error || "Failed to add email to waitlist", "error");
+      }
+    } catch (err) {
+      console.error("Error adding to waitlist:", err);
+      addToast("Failed to add email to waitlist", "error");
+    } finally {
+      setWaitlistSubmitting(false);
+    }
+  };
 
   const venueOptions = [
     "Artist Venue",
@@ -269,7 +335,6 @@ function App() {
     setError("");
     setStreamingVenues([]);
     setCurrentVenueCount(0);
-    setStreamingInProgress(true);
 
     const payload = {
       venueType,
@@ -282,9 +347,10 @@ function App() {
       venueSetting,
       audienceType,
       additionalRequirements,
+      userId: user?.id,
     };
 
-    console.log("Submitting stream request with payload:", payload);
+    console.log("Submitting venue request with payload:", payload);
 
     try {
       const response = await fetch("http://localhost:3001/api/venues/stream", {
@@ -296,9 +362,17 @@ function App() {
       });
 
       if (!response.ok) {
+        // Handle search limit error (429)
+        if (response.status === 429) {
+          setLimitReached(true);
+          setError("Search limit reached");
+          setLoading(false);
+          return;
+        }
+
         const errorText = await response.text();
         console.error(
-          "Stream request failed with status:",
+          "Request failed with status:",
           response.status,
           "Body:",
           errorText,
@@ -313,45 +387,25 @@ function App() {
         }
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+      // Refetch search count after successful submission to stay in sync with backend
+      if (user?.id) {
+        fetchSearchCount(user.id);
+      }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      const data = await response.json();
+      console.log("Received response:", data);
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
+      if (data.response) {
+        setGeminiResponse(data.response);
+      }
 
-        // Keep incomplete line in buffer
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              if (data.error) {
-                setError(data.error);
-                setStreamingInProgress(false);
-              } else if (data.complete) {
-                setStreamingInProgress(false);
-              } else if (data.venue) {
-                setStreamingVenues((prev) => [...prev, data.venue]);
-                setCurrentVenueCount(data.count);
-                setTotalVenuesToLoad(data.total);
-              }
-            } catch (e) {
-              console.error("Error parsing SSE data:", e);
-            }
-          }
-        }
+      if (data.venues && Array.isArray(data.venues)) {
+        setStreamingVenues(data.venues);
+        setCurrentVenueCount(data.venues.length);
       }
     } catch (err) {
-      console.error("Error fetching streaming data:", err);
+      console.error("Error fetching venue data:", err);
       setError("Failed to get response: " + err.message);
-      setStreamingInProgress(false);
     } finally {
       setLoading(false);
     }
@@ -474,9 +528,7 @@ function App() {
   return (
     <div className="App">
       <div className="auth-header">
-        <div className="header-content">
-          <div className="logo">Venue ID</div>
-        </div>
+        <div className="logo">Venue ID</div>
         <div>
           <Show when="signed-in">
             <Link to="/history" className="history-link">
@@ -492,16 +544,53 @@ function App() {
           </Show>
         </div>
       </div>
-      <div className="content-area">
+
+      {/* Hero Section */}
+      <div className="hero-section">
+        <div className="hero-decoration">
+          <svg viewBox="0 0 1440 400" preserveAspectRatio="none">
+            <path
+              d="M0,150 Q360,100 720,150 T1440,150"
+              fill="none"
+              stroke="rgba(0,0,0,0.06)"
+              strokeWidth="2"
+            />
+            <path
+              d="M0,220 Q360,180 720,220 T1440,220"
+              fill="none"
+              stroke="rgba(0,0,0,0.06)"
+              strokeWidth="2"
+            />
+            <path
+              d="M0,280 Q360,250 720,280 T1440,280"
+              fill="none"
+              stroke="rgba(0,0,0,0.06)"
+              strokeWidth="2"
+            />
+          </svg>
+        </div>
+        <div className="hero-content">
+          <h2 className="hero-headline">Find the perfect venue for any event.</h2>
+          <p className="hero-subtitle">
+            AI-powered recommendations grounded in real venue data across thousands of locations.
+          </p>
+          <div className="hero-cta-buttons">
+            <button
+              className="hero-cta-primary"
+              onClick={() => {
+                const searchSection = document.getElementById("search");
+                searchSection?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Find Your Venue
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="content-area" id="search">
         <div className="App-header">
           <div className="main-content-wrapper">
-            <div className="form-title-container">
-              <h1>Find Your Perfect Venue</h1>
-              <p className="subtitle">
-                Tell us about your event, and we'll find the ideal spot!
-              </p>
-            </div>
-
             <div className="form-container">
               <div className="column">
                 <h3>Select Event Type</h3>
@@ -660,7 +749,7 @@ function App() {
 
             <button
               onClick={handleStreamingSubmit}
-              disabled={loading}
+              disabled={loading || (user && limitReached)}
               className="generate-button"
             >
               {loading ? (
@@ -672,6 +761,58 @@ function App() {
                 "Find Venues"
               )}
             </button>
+
+            {/* Search counter - only show if limits are enabled */}
+            <Show when="signed-in">
+              {loadingSearchCount ? (
+                <p className="search-counter search-counter-loading">
+                  Loading...
+                </p>
+              ) : limitsEnabled ? (
+                <p
+                  className={`search-counter search-counter-${searchCount >= 5 ? "max" : searchCount >= 4 ? "warning" : "normal"}`}
+                >
+                  {searchCount === 5
+                    ? "Search limit reached"
+                    : `${searchCount} of 5 free searches used`}
+                </p>
+              ) : null}
+            </Show>
+            <Show when="signed-out">
+              <p className="search-counter search-counter-signout">
+                Sign in to track your searches
+              </p>
+            </Show>
+
+            {/* Limit reached with waitlist signup */}
+            {limitReached && user && (
+              <div className="limit-reached-container">
+                <div className="limit-reached-message">
+                  <h3>Search limit reached</h3>
+                  <p>
+                    You've used all 5 free searches. Upgrade coming soon — enter
+                    your email to be notified when Pro launches.
+                  </p>
+                  <div className="waitlist-form">
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={waitlistEmail}
+                      onChange={(e) => setWaitlistEmail(e.target.value)}
+                      className="waitlist-input"
+                      disabled={waitlistSubmitting}
+                    />
+                    <button
+                      onClick={handleWaitlistSubmit}
+                      className="waitlist-button"
+                      disabled={waitlistSubmitting || !waitlistEmail}
+                    >
+                      {waitlistSubmitting ? "Saving..." : "Notify me"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {error && <p className="error-message">{error}</p>}
             {streamingInProgress && (
