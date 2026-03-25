@@ -7,10 +7,11 @@
 html {
   margin: 0;
   padding: 0;
-  background: #FAF8F5;
+  background: #faf8f5;
   background-attachment: fixed;
   width: 100%;
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -49,8 +50,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 32px;
-  background-color: #ffffff;
+  padding: 8px 32px;
+  background-color: #fafaf8;
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   flex-wrap: wrap;
@@ -73,8 +74,8 @@ body {
 }
 
 .auth-header > div:first-child {
-  font-size: 1.1em;
-  font-weight: 800;
+  font-size: 1.65em;
+  font-weight: bolder;
   background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -86,7 +87,7 @@ body {
   background: transparent;
   color: #333;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 10px 20px;
+  padding: 6px 10px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.95em;
@@ -108,10 +109,14 @@ body {
 
 /* --- Hero Section --- */
 .hero-section {
-  padding: 80px 20px 60px;
+  padding: 120px 20px 100px;
   position: relative;
   text-align: center;
   width: 100%;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .hero-decoration {
@@ -291,8 +296,7 @@ body {
   font-size: 1.5em;
   font-weight: 700;
   color: #1f2937;
-  border-left: 3px solid #10b981;
-  padding-left: 10px;
+
   padding-bottom: 0;
 }
 

@@ -3,29 +3,45 @@
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #f5fdfb 0%, #f0f9ff 100%);
-  background-attachment: fixed;
 }
 
 .auth-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 32px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 8px 32px;
+  background-color: #fafaf8;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+  gap: 12px;
+  width: calc(100% - 48px);
+  max-width: 1200px;
+  position: relative;
+  z-index: 10;
+  margin: 16px auto;
+  left: 0;
+  right: 0;
+  border-radius: 50px;
+}
+
+.auth-header > div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 12px;
+  margin-right: auto;
 }
 
 .logo {
-  font-size: 1.3em;
-  font-weight: 800;
+  font-size: 1.65em;
+  font-weight: 900;
   background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -178,7 +194,7 @@
 .event-type {
   font-size: 1.05em;
   font-weight: 600;
-  color: #10b981;
+  color: #333;
 }
 
 .location {

@@ -147,14 +147,14 @@ function HistoryPage() {
     return (
       <div className="history-container">
         <div className="auth-header">
-          <div className="header-content">
-            <Link to="/" className="logo">
-              Venue ID
-            </Link>
+          <Link to="/" className="logo">
+            Venue ID
+          </Link>
+          <div>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
           </div>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
         </div>
         <div className="history-page">
           <h1 className="page-title">Your saved searches</h1>
@@ -176,14 +176,14 @@ function HistoryPage() {
   return (
     <div className="history-container">
       <div className="auth-header">
-        <div className="header-content">
-          <Link to="/" className="logo">
-            Venue ID
-          </Link>
+        <Link to="/" className="logo">
+          Venue ID
+        </Link>
+        <div>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
         </div>
-        <Show when="signed-in">
-          <UserButton />
-        </Show>
       </div>
 
       <div className="history-page">

@@ -528,7 +528,9 @@ function App() {
   return (
     <div className="App">
       <div className="auth-header">
-        <div className="logo">Venue ID</div>
+        <Link to="/" className="logo">
+          Venue ID
+        </Link>
         <div>
           <Show when="signed-in">
             <Link to="/history" className="history-link">
@@ -552,34 +554,40 @@ function App() {
             <path
               d="M0,150 Q360,100 720,150 T1440,150"
               fill="none"
-              stroke="rgba(0,0,0,0.06)"
+              stroke="rgba(0,0,0,0.036)"
               strokeWidth="2"
             />
             <path
               d="M0,220 Q360,180 720,220 T1440,220"
               fill="none"
-              stroke="rgba(0,0,0,0.06)"
+              stroke="rgba(0,0,0,0.036)"
               strokeWidth="2"
             />
             <path
               d="M0,280 Q360,250 720,280 T1440,280"
               fill="none"
-              stroke="rgba(0,0,0,0.06)"
+              stroke="rgba(0,0,0,0.036)"
               strokeWidth="2"
             />
           </svg>
         </div>
         <div className="hero-content">
-          <h2 className="hero-headline">Find the perfect venue for any event.</h2>
+          <h2 className="hero-headline">
+            Find the perfect venue for any event.
+          </h2>
           <p className="hero-subtitle">
-            AI-powered recommendations grounded in real venue data across thousands of locations.
+            AI-powered recommendations grounded in real venue data across
+            thousands of locations.
           </p>
           <div className="hero-cta-buttons">
             <button
               className="hero-cta-primary"
               onClick={() => {
                 const searchSection = document.getElementById("search");
-                searchSection?.scrollIntoView({ behavior: "smooth" });
+                searchSection?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
               }}
             >
               Find Your Venue
