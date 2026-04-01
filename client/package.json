@@ -12,6 +12,7 @@
   "dependencies": {
     "@clerk/react": "^6.1.2",
     "@supabase/supabase-js": "^2.99.3",
+    "lucide-react": "^1.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",

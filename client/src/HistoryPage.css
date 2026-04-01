@@ -5,56 +5,6 @@
   width: 100%;
 }
 
-.auth-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 32px;
-  background-color: #fafaf8;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  flex-wrap: wrap;
-  gap: 12px;
-  width: calc(100% - 48px);
-  max-width: 1200px;
-  position: relative;
-  z-index: 10;
-  margin: 16px auto;
-  left: 0;
-  right: 0;
-  border-radius: 50px;
-}
-
-.auth-header > div {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-right: auto;
-}
-
-.logo {
-  font-size: 1.65em;
-  font-weight: 900;
-  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-decoration: none;
-  cursor: pointer;
-  transition: opacity 0.3s ease;
-}
-
-.logo:hover {
-  opacity: 0.8;
-}
-
 .history-page {
   flex: 1;
   max-width: 900px;
@@ -422,14 +372,6 @@
 
   .empty-state {
     padding: 60px 20px;
-  }
-
-  .auth-header {
-    padding: 12px 16px;
-  }
-
-  .logo {
-    font-size: 1.1em;
   }
 }
 

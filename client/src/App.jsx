@@ -1,13 +1,8 @@
 import React, { useState } from "react";
 import "./App.css";
-import {
-  Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-  useUser,
-} from "@clerk/react";
+import { Show, useUser } from "@clerk/react";
 import { Link } from "react-router-dom";
+import Navbar from "./components/Navbar";
 
 function Toast({ message, type, onClose }) {
   React.useEffect(() => {
@@ -113,11 +108,7 @@ function App() {
     "Party Venue",
     "Wedding Venue",
     "Sports Tournament",
-    "Esports Tournament",
     "Theater Show",
-    "Product Expo",
-    "Political Rally",
-    "Hackathon",
   ];
 
   const addToast = (message, type = "success") => {
@@ -138,7 +129,7 @@ function App() {
           `**Capacity:** ${venue.capacity}\n` +
           `**Location:** ${venue.location}\n` +
           `**Features:** ${venue.features}\n` +
-          `**Url To Website:** ${venue.website}\n` +
+          `**Visit Website:** ${venue.website}\n` +
           `**Time & Date:** ${venue.dateTime}`
         );
       })
@@ -454,7 +445,7 @@ function App() {
           <strong>Features:</strong> {venue.features}
         </p>
         <p>
-          <strong>URL to Website:</strong>{" "}
+          <strong>Visit Website:</strong>{" "}
           <a
             href={venue.url_to_website}
             target="_blank"
@@ -513,7 +504,7 @@ function App() {
           <strong>Features:</strong> {venue.features}
         </p>
         <p>
-          <strong>URL to Website:</strong>{" "}
+          <strong>Visit Website:</strong>{" "}
           <a href={venue.website} target="_blank" rel="noopener noreferrer">
             {venue.website}
           </a>
@@ -527,25 +518,7 @@ function App() {
 
   return (
     <div className="App">
-      <div className="auth-header">
-        <Link to="/" className="logo">
-          Venue ID
-        </Link>
-        <div>
-          <Show when="signed-in">
-            <Link to="/history" className="history-link">
-              History
-            </Link>
-          </Show>
-          <Show when="signed-out">
-            <SignInButton />
-            <SignUpButton />
-          </Show>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
-        </div>
-      </div>
+      <Navbar />
 
       {/* Hero Section */}
       <div className="hero-section">
@@ -583,10 +556,23 @@ function App() {
             <button
               className="hero-cta-primary"
               onClick={() => {
-                const searchSection = document.getElementById("search");
-                searchSection?.scrollIntoView({
+                const eventTypeSection = document.getElementById("event-type");
+                const navbar = document.querySelector(".auth-header");
+
+                if (!eventTypeSection) return;
+
+                const navbarHeight =
+                  navbar instanceof HTMLElement ? navbar.offsetHeight : 0;
+                const extraOffset = 12;
+                const targetTop =
+                  window.scrollY +
+                  eventTypeSection.getBoundingClientRect().top -
+                  navbarHeight -
+                  extraOffset;
+
+                window.scrollTo({
+                  top: Math.max(targetTop, 0),
                   behavior: "smooth",
-                  block: "center",
                 });
               }}
             >
@@ -601,7 +587,7 @@ function App() {
           <div className="main-content-wrapper">
             <div className="form-container">
               <div className="column">
-                <h3>Select Event Type</h3>
+                <h3 id="event-type">Event type</h3>
                 <div className="radio-group">
                   {venueOptions.map((option) => (
                     <div
@@ -624,51 +610,36 @@ function App() {
               </div>
 
               <div className="column">
-                <h3>Location & Setting</h3>
-                <input
-                  type="text"
-                  placeholder="Full city name (e.g., Cleveland)"
-                  value={city}
-                  onChange={(e) => {
-                    setCity(e.target.value);
-                    if (e.target.value.trim().length > 3) {
-                      setCityError("");
-                    }
+                <h3>Location</h3>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "24px",
                   }}
-                  className={cityError ? "input-error" : ""}
-                />
+                >
+                  <input
+                    type="text"
+                    placeholder="City"
+                    value={city}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      if (e.target.value.trim().length > 3) {
+                        setCityError("");
+                      }
+                    }}
+                    className={cityError ? "input-error" : ""}
+                  />
+                  <input
+                    type="text"
+                    placeholder="State"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                  />
+                </div>
                 {cityError && <span className="error-text">{cityError}</span>}
-                <p className="helper-text">
-                  Enter full city name for best results
-                </p>
-                <input
-                  type="text"
-                  placeholder="State code (e.g., OH)"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                />
-                <label
-                  htmlFor="country-select"
-                  className="input-label"
-                  style={{ marginTop: "12px" }}
-                >
-                  Country:
-                </label>
-                <select
-                  id="country-select"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="country-select"
-                >
-                  <option value="US">United States</option>
-                  <option value="UK">United Kingdom</option>
-                  <option value="Canada">Canada</option>
-                  <option value="Australia">Australia</option>
-                </select>
 
-                <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
-                  Venue Setting
-                </h4>
+                <h3 style={{ marginTop: "24px" }}>Venue setting</h3>
                 <div className="button-group">
                   {["Indoor", "Outdoor", "Both"].map((option) => (
                     <button
@@ -682,76 +653,82 @@ function App() {
                   ))}
                 </div>
 
-                <div style={{ marginTop: "16px" }}>
-                  <label
-                    htmlFor="additional-requirements"
-                    className="input-label"
-                  >
-                    Additional Requirements
-                    <span className="optional-tag">Optional</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="additional-requirements"
-                    placeholder="Any specific requirements? (e.g. needs a basketball court, must have a green room, waterfront preferred...)"
-                    value={additionalRequirements}
-                    onChange={(e) => setAdditionalRequirements(e.target.value)}
-                    className="additional-requirements-input"
-                  />
-                </div>
+                <h3 style={{ marginTop: "24px" }}>Additional requirements</h3>
+                <input
+                  type="text"
+                  id="additional-requirements"
+                  placeholder="Any specific needs? (optional)"
+                  value={additionalRequirements}
+                  onChange={(e) => setAdditionalRequirements(e.target.value)}
+                  className="additional-requirements-input"
+                />
               </div>
 
               <div className="column">
-                <h3>Event Specifics</h3>
-                <label htmlFor="event-date" className="input-label">
-                  Date:
-                </label>
-                <input
-                  type="date"
-                  id="event-date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-                <label htmlFor="event-time" className="input-label">
-                  Time (EST):
-                </label>
-                <input
-                  type="text"
-                  id="event-time"
-                  placeholder="e.g., 7:00 PM"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                />
-                <label htmlFor="audience-input" className="input-label">
+                <h3>Event date & time</h3>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "24px",
+                  }}
+                >
+                  <input
+                    type="date"
+                    id="event-date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    id="event-time"
+                    placeholder="e.g., 7:00 PM"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                  />
+                </div>
+
+                <h3 style={{ marginTop: "24px" }}>
                   {venueType === "Artist Venue"
-                    ? "Spotify Monthly Listeners:"
-                    : "Expected Audience:"}
-                </label>
+                    ? "Spotify Monthly Listeners"
+                    : "Expected audience"}
+                </h3>
                 <input
                   type="text"
                   id="audience-input"
                   placeholder={
                     venueType === "Artist Venue"
-                      ? "e.g., 21000000"
-                      : "e.g., 5000"
+                      ? "e.g., 10,000,000"
+                      : "e.g., 150"
                   }
                   value={audienceInput}
                   onChange={(e) => setAudienceInput(e.target.value)}
                 />
 
-                <h4 style={{ marginTop: "16px", marginBottom: "8px" }}>
-                  Audience Type
-                </h4>
-                <select
-                  value={audienceType}
-                  onChange={(e) => setAudienceType(e.target.value)}
-                  className="audience-select"
-                >
-                  <option>General / All Ages</option>
-                  <option>21+ Only</option>
-                  <option>Corporate / Professional</option>
-                  <option>Family Friendly</option>
-                </select>
+                <h3 style={{ marginTop: "24px" }}>Audience type</h3>
+                <div className="radio-group">
+                  {[
+                    "General / All Ages",
+                    "21+ Only",
+                    "Corporate / Professional",
+                  ].map((option) => (
+                    <div
+                      key={option}
+                      className="radio-option"
+                      onClick={() => setAudienceType(option)}
+                    >
+                      <input
+                        type="radio"
+                        id={`audience-${option}`}
+                        name="audienceType"
+                        value={option}
+                        checked={audienceType === option}
+                        onChange={(e) => setAudienceType(e.target.value)}
+                      />
+                      <label htmlFor={`audience-${option}`}>{option}</label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -831,7 +808,7 @@ function App() {
             )}
             {streamingVenues.length > 0 && (
               <div className="response-container">
-                <h2>Top Venue Picks:</h2>
+                <h2>Top Venue Picks</h2>
                 {renderStreamingVenues()}
                 <div className="save-section">
                   <button

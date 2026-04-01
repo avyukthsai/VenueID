@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Show, UserButton } from "@clerk/react";
+import Navbar from "./components/Navbar";
 import "./SharePage.css";
 
 function SharePage() {
@@ -85,7 +85,7 @@ function SharePage() {
           <strong>Features:</strong> {venue.features}
         </p>
         <p>
-          <strong>URL to Website:</strong>{" "}
+          <strong>Visit Website:</strong>{" "}
           <a
             href={venue.url_to_website}
             target="_blank"
@@ -104,16 +104,7 @@ function SharePage() {
   if (loading) {
     return (
       <div className="share-container">
-        <div className="auth-header">
-          <div className="header-content">
-            <Link to="/" className="logo">
-              Venue ID
-            </Link>
-          </div>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
-        </div>
+        <Navbar />
         <div className="share-page">
           <div className="search-history">
             {[1, 2, 3].map((index) => (
@@ -133,16 +124,7 @@ function SharePage() {
   if (error) {
     return (
       <div className="share-container">
-        <div className="auth-header">
-          <div className="header-content">
-            <Link to="/" className="logo">
-              Venue ID
-            </Link>
-          </div>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
-        </div>
+        <Navbar />
         <div className="share-page">
           <div className="error-state">
             <h2>This link has expired or doesn't exist</h2>
@@ -158,16 +140,7 @@ function SharePage() {
 
   return (
     <div className="share-container">
-      <div className="auth-header">
-        <div className="header-content">
-          <Link to="/" className="logo">
-            Venue ID
-          </Link>
-        </div>
-        <Show when="signed-in">
-          <UserButton />
-        </Show>
-      </div>
+      <Navbar />
 
       <div className="share-page">
         <div className="share-banner">
@@ -183,7 +156,7 @@ function SharePage() {
         </div>
 
         <div className="response-container">
-          <h2>Top Venue Picks:</h2>
+          <h2>Top Venue Picks</h2>
           {renderVenues()}
         </div>
       </div>

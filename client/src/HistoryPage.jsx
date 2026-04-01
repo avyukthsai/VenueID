@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/react";
 import { Link } from "react-router-dom";
-import { Show, UserButton } from "@clerk/react";
+import Navbar from "./components/Navbar";
 import "./HistoryPage.css";
 
 function HistoryPage() {
@@ -146,16 +146,7 @@ function HistoryPage() {
   if (loading) {
     return (
       <div className="history-container">
-        <div className="auth-header">
-          <Link to="/" className="logo">
-            Venue ID
-          </Link>
-          <div>
-            <Show when="signed-in">
-              <UserButton />
-            </Show>
-          </div>
-        </div>
+        <Navbar />
         <div className="history-page">
           <h1 className="page-title">Your saved searches</h1>
           <div className="search-history">
@@ -175,16 +166,7 @@ function HistoryPage() {
 
   return (
     <div className="history-container">
-      <div className="auth-header">
-        <Link to="/" className="logo">
-          Venue ID
-        </Link>
-        <div>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
-        </div>
-      </div>
+      <Navbar />
 
       <div className="history-page">
         <h1 className="page-title">Your saved searches</h1>

@@ -43,16 +43,14 @@ const generationConfig = {
 
 // prompt for the AI
 const systemInstruction = `You will be given a venue type from the following list:
-artist venues, party venues, wedding venues, sports tournament,
-esports tournament, theater show, product expo, political rally,
-and hackathon. You will be given the country, state, and city.
+artist venues, party venues, wedding venues, sports tournament, and theater show. You will be given the country, state, and city.
 
 **IMPORTANT - SPOTIFY MENTIONS:**
 Only for Artist Venue events: If the selected venue type is an artist venue, you will receive
 the artist's monthly Spotify listener count instead of the expected audience. Based on the monthly 
 listener count, estimate the expected audience amount in the whyThisVenue explanation.
 
-For ALL OTHER event types (party, wedding, sports, esports, theater, expo, rally, hackathon):
+For ALL OTHER event types (party, wedding, sports, theater):
 NEVER mention Spotify, streaming data, listener counts, or music-related predictions in the 
 whyThisVenue explanation. Do not reference the input data source at all. Only discuss the 
 expected audience size, event type, venue features, and location suitability.
@@ -169,7 +167,7 @@ function convertJsonVenuesToText(venuesData) {
         `**Capacity:** ${venue.capacity}\n` +
         `**Location:** ${venue.location}\n` +
         `**Features:** ${venue.features}\n` +
-        `**Url To Website:** ${venue.website}\n` +
+        `**Visit Website:** ${venue.website}\n` +
         `**Time & Date:** ${venue.dateTime}`
       );
     })
@@ -217,7 +215,6 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
     ],
     "wedding venue": ["wedding", "banquet", "reception", "ballroom", "elegant"],
     "sports tournament": ["sports", "arena", "field", "stadium", "game"],
-    "esports tournament": ["gaming", "esports", "tournament", "tech"],
     "theater show": [
       "theater",
       "auditorium",
@@ -225,9 +222,6 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
       "seating",
       "performance",
     ],
-    "product expo": ["expo", "exhibition", "display", "conference", "space"],
-    "political rally": ["rally", "event", "gathering", "large capacity"],
-    hackathon: ["tech", "coding", "space", "wifi", "tech-friendly"],
   };
 
   const keywords = typeKeywords[venueType.toLowerCase()] || [];

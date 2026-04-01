@@ -6,11 +6,7 @@ const eventTypeKeywords = {
   "Party Venue": "party entertainment",
   "Wedding Venue": "wedding",
   "Sports Tournament": "sports",
-  "Esports Tournament": "esports gaming",
   "Theater Show": "theater performing arts",
-  "Product Expo": "expo convention",
-  "Political Rally": "rally",
-  Hackathon: "conference convention",
 };
 
 /**

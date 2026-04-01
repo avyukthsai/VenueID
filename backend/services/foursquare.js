@@ -6,11 +6,7 @@ const eventTypeCategoryIds = {
   "Party Venue": [13003, 13065],
   "Wedding Venue": [13003, 13065, 10056],
   "Sports Tournament": [18000, 18021],
-  "Esports Tournament": [13065, 10000],
   "Theater Show": [10058, 10054],
-  "Product Expo": [13065, 10044],
-  "Political Rally": [13065, 10044],
-  Hackathon: [13065, 12076],
 };
 
 /**
