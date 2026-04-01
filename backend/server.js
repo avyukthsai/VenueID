@@ -27,7 +27,11 @@ const app = express();
 const port = 3001; // port for your backend
 
 // Middleware
-app.use(cors()); // Enable CORS for cross-origin requests from React app
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  }),
+); // Enable CORS for cross-origin requests from React app
 app.use(express.json()); // To parse JSON request bodies
 
 // Configure Google Generative AI
@@ -172,6 +176,23 @@ function convertJsonVenuesToText(venuesData) {
       );
     })
     .join("\n-----\n");
+}
+
+function getGeminiErrorDetails(error) {
+  const status =
+    error?.status ||
+    error?.response?.status ||
+    error?.response?.statusCode ||
+    null;
+  const message =
+    error?.message ||
+    error?.response?.statusText ||
+    "Unknown Gemini API error";
+  return { status, message };
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Helper function to calculate match score (0-100)
@@ -516,7 +537,7 @@ app.post("/api/venues/stream", async (req, res) => {
   }
 
   let retryCount = 0;
-  const maxRetries = 1;
+  const maxRetries = 2;
 
   while (retryCount <= maxRetries) {
     try {
@@ -603,9 +624,11 @@ app.post("/api/venues/stream", async (req, res) => {
         success: true,
       });
     } catch (error) {
-      console.error("Error calling Gemini API:", error);
+      const geminiError = getGeminiErrorDetails(error);
+      console.error("Error calling Gemini API:", geminiError, error);
       if (retryCount < maxRetries) {
         retryCount++;
+        await delay(600 * retryCount);
         console.log(
           `Retry attempt ${retryCount}/${maxRetries} due to API error`,
         );
@@ -720,7 +743,7 @@ app.post("/generate-venue", async (req, res) => {
   }
 
   let retryCount = 0;
-  const maxRetries = 1;
+  const maxRetries = 2;
 
   while (retryCount <= maxRetries) {
     try {
@@ -794,9 +817,11 @@ app.post("/generate-venue", async (req, res) => {
       res.json({ response: textResponse });
       return;
     } catch (error) {
-      console.error("Error calling Gemini API:", error);
+      const geminiError = getGeminiErrorDetails(error);
+      console.error("Error calling Gemini API:", geminiError, error);
       if (retryCount < maxRetries) {
         retryCount++;
+        await delay(600 * retryCount);
         console.log(
           `Retry attempt ${retryCount}/${maxRetries} due to API error`,
         );
@@ -854,7 +879,7 @@ app.post("/api/waitlist", async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Backend server listening at http://localhost:${port}`);
+  console.log(`Backend server listening on port ${port}`);
 });
 
 // Handle uncaught errors

@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import "./HistoryPage.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function HistoryPage() {
   const { user } = useUser();
   const [searches, setSearches] = useState([]);
@@ -17,9 +19,7 @@ function HistoryPage() {
 
     const fetchSearches = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/searches/${user.id}`,
-        );
+        const response = await fetch(`${API_URL}/api/searches/${user.id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch searches");
         }
@@ -39,16 +39,13 @@ function HistoryPage() {
   const handleDelete = async (searchId) => {
     setDeleting(searchId);
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/searches/${searchId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId: user.id }),
+      const response = await fetch(`${API_URL}/api/searches/${searchId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ userId: user.id }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to delete search");

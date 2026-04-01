@@ -45,7 +45,7 @@ router.post("/", async (req, res) => {
     }
 
     // Return the full share URL
-    const shareUrl = `http://localhost:5173/share/${token}`;
+    const shareUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/share/${token}`;
 
     res.status(201).json({
       message: "Share link created successfully",

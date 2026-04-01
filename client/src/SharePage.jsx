@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import "./SharePage.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function SharePage() {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -14,9 +16,7 @@ function SharePage() {
   useEffect(() => {
     const fetchSharedSearch = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/shares/${token}`,
-        );
+        const response = await fetch(`${API_URL}/api/shares/${token}`);
 
         if (!response.ok) {
           throw new Error(

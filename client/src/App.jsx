@@ -4,6 +4,8 @@ import { Show, useUser } from "@clerk/react";
 import { Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Toast({ message, type, onClose }) {
   React.useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -53,9 +55,7 @@ function App() {
   const fetchSearchCount = async (userId) => {
     setLoadingSearchCount(true);
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/searches/count/${userId}`,
-      );
+      const response = await fetch(`${API_URL}/api/searches/count/${userId}`);
       const data = await response.json();
       console.log("DEBUG: Received from /api/searches/count:", data);
       if (data.searchCount !== undefined) {
@@ -82,7 +82,7 @@ function App() {
 
     setWaitlistSubmitting(true);
     try {
-      const response = await fetch("http://localhost:3001/api/waitlist", {
+      const response = await fetch(`${API_URL}/api/waitlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: waitlistEmail }),
@@ -160,7 +160,7 @@ function App() {
     const resultsText = convertStreamingVenuesToText(streamingVenues);
 
     try {
-      const response = await fetch("http://localhost:3001/api/searches", {
+      const response = await fetch(`${API_URL}/api/searches`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -205,7 +205,7 @@ function App() {
     const resultsText = convertStreamingVenuesToText(streamingVenues);
 
     try {
-      const response = await fetch("http://localhost:3001/api/shares", {
+      const response = await fetch(`${API_URL}/api/shares`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -272,7 +272,7 @@ function App() {
     };
 
     try {
-      const response = await fetch("http://localhost:3001/generate-venue", {
+      const response = await fetch(`${API_URL}/generate-venue`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -344,7 +344,7 @@ function App() {
     console.log("Submitting venue request with payload:", payload);
 
     try {
-      const response = await fetch("http://localhost:3001/api/venues/stream", {
+      const response = await fetch(`${API_URL}/api/venues/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
