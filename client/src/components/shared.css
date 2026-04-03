@@ -1,0 +1,75 @@
+/* ============================================================
+   shared.css — styles used across multiple pages
+   Import this in any page that uses these elements.
+   ============================================================ */
+
+/* --- Back / CTA link-buttons (Link elements styled as buttons) --- */
+.back-button,
+.discover-button {
+  padding: 14px 40px;
+  font-size: 1em;
+  font-weight: 700;
+  text-decoration: none;
+  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.back-button:hover,
+.discover-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+  color: white;
+  text-decoration: none;
+}
+
+/* --- Skeleton Loading Cards --- */
+.skeleton-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-subtitle {
+  height: 16px;
+  width: 40%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

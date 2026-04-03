@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import "./App.css";
 import { Show, useUser } from "@clerk/react";
-import { Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import VenueCard from "./components/VenueCard";
+import BackgroundCarousel from "./components/BackgroundCarousel";
+import {
+  convertStreamingVenuesToText,
+  normalizeVenue,
+} from "./utils/venueUtils";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -18,7 +23,7 @@ function Toast({ message, type, onClose }) {
 function App() {
   const { user } = useUser();
   const [venueType, setVenueType] = useState("Artist Venue");
-  const [country, setCountry] = useState("US");
+  const [country] = useState("US");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [date, setDate] = useState("");
@@ -28,16 +33,12 @@ function App() {
   const [audienceType, setAudienceType] = useState("General / All Ages");
   const [additionalRequirements, setAdditionalRequirements] = useState("");
   const [cityError, setCityError] = useState("");
-  const [geminiResponse, setGeminiResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [streamingVenues, setStreamingVenues] = useState([]);
-  const [streamingInProgress, setStreamingInProgress] = useState(false);
-  const [currentVenueCount, setCurrentVenueCount] = useState(0);
-  const [totalVenuesToLoad, setTotalVenuesToLoad] = useState(3);
   const [searchCount, setSearchCount] = useState(0);
   const [limitsEnabled, setLimitsEnabled] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState("");
@@ -45,7 +46,6 @@ function App() {
   const [limitReached, setLimitReached] = useState(false);
   const [loadingSearchCount, setLoadingSearchCount] = useState(false);
 
-  // Fetch search count on component mount and whenever userId changes
   React.useEffect(() => {
     if (user?.id) {
       fetchSearchCount(user.id);
@@ -57,14 +57,9 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/api/searches/count/${userId}`);
       const data = await response.json();
-      console.log("DEBUG: Received from /api/searches/count:", data);
       if (data.searchCount !== undefined) {
         setSearchCount(data.searchCount);
         setLimitsEnabled(data.limitsEnabled ?? false);
-        console.log(
-          "DEBUG: Setting limitsEnabled to",
-          data.limitsEnabled ?? false,
-        );
         setLimitReached(data.limitsEnabled && data.searchCount >= 5);
       }
     } catch (err) {
@@ -119,22 +114,18 @@ function App() {
     }, 3000);
   };
 
-  const convertStreamingVenuesToText = (venues) => {
-    return venues
-      .map((venue) => {
-        return (
-          `**Venue:** ${venue.name}\n` +
-          `**Why this venue?** ${venue.whyThisVenue}\n` +
-          `**Address:** ${venue.address}\n` +
-          `**Capacity:** ${venue.capacity}\n` +
-          `**Location:** ${venue.location}\n` +
-          `**Features:** ${venue.features}\n` +
-          `**Visit Website:** ${venue.website}\n` +
-          `**Time & Date:** ${venue.dateTime}`
-        );
-      })
-      .join("\n-----\n");
-  };
+  const buildSearchParams = () => ({
+    venueType,
+    country,
+    state,
+    city,
+    date,
+    time,
+    audienceInput,
+    venueSetting,
+    audienceType,
+    additionalRequirements,
+  });
 
   const handleSaveResults = async () => {
     if (!user) {
@@ -143,32 +134,14 @@ function App() {
     }
 
     setSaving(true);
-
-    const searchParams = {
-      venueType,
-      country,
-      state,
-      city,
-      date,
-      time,
-      audienceInput,
-      venueSetting,
-      audienceType,
-      additionalRequirements,
-    };
-
-    const resultsText = convertStreamingVenuesToText(streamingVenues);
-
     try {
       const response = await fetch(`${API_URL}/api/searches`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
-          searchParams,
-          results: resultsText,
+          searchParams: buildSearchParams(),
+          results: convertStreamingVenuesToText(streamingVenues),
         }),
       });
 
@@ -188,31 +161,13 @@ function App() {
 
   const handleShare = async () => {
     setSharing(true);
-
-    const searchParams = {
-      venueType,
-      country,
-      state,
-      city,
-      date,
-      time,
-      audienceInput,
-      venueSetting,
-      audienceType,
-      additionalRequirements,
-    };
-
-    const resultsText = convertStreamingVenuesToText(streamingVenues);
-
     try {
       const response = await fetch(`${API_URL}/api/shares`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          searchParams,
-          results: resultsText,
+          searchParams: buildSearchParams(),
+          results: convertStreamingVenuesToText(streamingVenues),
         }),
       });
 
@@ -222,16 +177,10 @@ function App() {
       }
 
       const data = await response.json();
-      const shareUrl = data.shareUrl;
-
-      // Copy to clipboard
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(data.shareUrl);
       addToast("Link copied to clipboard!", "success");
 
-      // Reset button text after 2 seconds
-      setTimeout(() => {
-        setSharing(false);
-      }, 2000);
+      setTimeout(() => setSharing(false), 2000);
     } catch (err) {
       console.error("Error sharing results:", err);
       addToast("Failed to create share link", "error");
@@ -239,70 +188,10 @@ function App() {
     }
   };
 
-  const handleSubmit = async () => {
-    // Client-side validation
-    const missingFields = [];
-    if (!venueType) missingFields.push("Event Type");
-    if (!city) missingFields.push("City");
-    if (!state) missingFields.push("State");
-    if (!date) missingFields.push("Date");
-    if (!time) missingFields.push("Time");
-    if (!audienceInput) missingFields.push("Expected Audience");
-
-    if (missingFields.length > 0) {
-      setError(`Please fill in: ${missingFields.join(", ")}`);
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setGeminiResponse("");
-
-    const payload = {
-      venueType,
-      country,
-      state,
-      city,
-      date: date.toString(),
-      time,
-      audienceInput,
-      venueSetting,
-      audienceType,
-      additionalRequirements,
-    };
-
-    try {
-      const response = await fetch(`${API_URL}/generate-venue`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
-      setGeminiResponse(data.response);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Failed to get response: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleStreamingSubmit = async () => {
-    // Clear previous errors
     setError("");
     setCityError("");
 
-    // Client-side validation
     const missingFields = [];
     if (!venueType) missingFields.push("Event Type");
     if (!city) missingFields.push("City");
@@ -311,7 +200,6 @@ function App() {
     if (!time) missingFields.push("Time");
     if (!audienceInput) missingFields.push("Expected Audience");
 
-    // City validation - must be more than 3 characters for best results
     if (city && city.trim().length <= 3) {
       setCityError("Please enter the full city name");
       return;
@@ -323,37 +211,20 @@ function App() {
     }
 
     setLoading(true);
-    setError("");
     setStreamingVenues([]);
-    setCurrentVenueCount(0);
-
-    const payload = {
-      venueType,
-      country,
-      state,
-      city,
-      date: date.toString(),
-      time,
-      audienceInput,
-      venueSetting,
-      audienceType,
-      additionalRequirements,
-      userId: user?.id,
-    };
-
-    console.log("Submitting venue request with payload:", payload);
 
     try {
       const response = await fetch(`${API_URL}/api/venues/stream`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildSearchParams(),
+          date: date.toString(),
+          userId: user?.id,
+        }),
       });
 
       if (!response.ok) {
-        // Handle search limit error (429)
         if (response.status === 429) {
           setLimitReached(true);
           setError("Search limit reached");
@@ -362,12 +233,6 @@ function App() {
         }
 
         const errorText = await response.text();
-        console.error(
-          "Request failed with status:",
-          response.status,
-          "Body:",
-          errorText,
-        );
         try {
           const errorData = JSON.parse(errorText);
           throw new Error(
@@ -378,21 +243,11 @@ function App() {
         }
       }
 
-      // Refetch search count after successful submission to stay in sync with backend
-      if (user?.id) {
-        fetchSearchCount(user.id);
-      }
+      if (user?.id) fetchSearchCount(user.id);
 
       const data = await response.json();
-      console.log("Received response:", data);
-
-      if (data.response) {
-        setGeminiResponse(data.response);
-      }
-
       if (data.venues && Array.isArray(data.venues)) {
         setStreamingVenues(data.venues);
-        setCurrentVenueCount(data.venues.length);
       }
     } catch (err) {
       console.error("Error fetching venue data:", err);
@@ -400,120 +255,6 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const parseVenues = (response) => {
-    const venues = response
-      .split("-----")
-      .map((block) => block.trim())
-      .filter((block) => block);
-    return venues.map((venueText) => {
-      const lines = venueText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line);
-      const venue = {};
-      lines.forEach((line) => {
-        const match = line.match(/\*\*(.*?):\*\*\s*(.*)/);
-        if (match) {
-          const key = match[1].toLowerCase().replace(/\s+/g, "_");
-          venue[key] = match[2];
-        }
-      });
-      return venue;
-    });
-  };
-
-  const renderVenues = () => {
-    const venues = parseVenues(geminiResponse);
-    return venues.map((venue, index) => (
-      <div key={index} className="venue-card">
-        <h3>{venue.venue}</h3>
-        <p>
-          <strong>Why this venue?</strong> {venue.why_this_venue}
-        </p>
-        <p>
-          <strong>Address:</strong> {venue.address}
-        </p>
-        <p>
-          <strong>Capacity:</strong> {venue.capacity}
-        </p>
-        <p>
-          <strong>Location:</strong> {venue.location}
-        </p>
-        <p>
-          <strong>Features:</strong> {venue.features}
-        </p>
-        <p>
-          <strong>Visit Website:</strong>{" "}
-          <a
-            href={venue.url_to_website}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {venue.url_to_website}
-          </a>
-        </p>
-        <p>
-          <strong>Time & Date:</strong> {venue["time_&_date"]}
-        </p>
-      </div>
-    ));
-  };
-
-  const getMatchScoreColor = (score) => {
-    if (score >= 90) return "#10b981"; // green
-    if (score >= 75) return "#f59e0b"; // amber
-    return "#9ca3af"; // gray
-  };
-
-  const renderStreamingVenues = () => {
-    return streamingVenues.map((venue, index) => (
-      <div
-        key={index}
-        className="venue-card venue-card-streaming"
-        style={{
-          animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`,
-        }}
-      >
-        <div className="venue-card-header">
-          <h3>{venue.name}</h3>
-          <div
-            className="match-score-badge"
-            title="Match score based on capacity, event type, and venue features"
-            style={{
-              backgroundColor: getMatchScoreColor(venue.matchScore),
-            }}
-          >
-            {venue.matchScore}%
-          </div>
-        </div>
-        <p>
-          <strong>Why this venue?</strong> {venue.whyThisVenue}
-        </p>
-        <p>
-          <strong>Address:</strong> {venue.address}
-        </p>
-        <p>
-          <strong>Capacity:</strong> {venue.capacity}
-        </p>
-        <p>
-          <strong>Location:</strong> {venue.location}
-        </p>
-        <p>
-          <strong>Features:</strong> {venue.features}
-        </p>
-        <p>
-          <strong>Visit Website:</strong>{" "}
-          <a href={venue.website} target="_blank" rel="noopener noreferrer">
-            {venue.website}
-          </a>
-        </p>
-        <p>
-          <strong>Time & Date:</strong> {venue.dateTime}
-        </p>
-      </div>
-    ));
   };
 
   return (
@@ -558,22 +299,15 @@ function App() {
               onClick={() => {
                 const eventTypeSection = document.getElementById("event-type");
                 const navbar = document.querySelector(".auth-header");
-
                 if (!eventTypeSection) return;
-
                 const navbarHeight =
                   navbar instanceof HTMLElement ? navbar.offsetHeight : 0;
-                const extraOffset = 12;
                 const targetTop =
                   window.scrollY +
                   eventTypeSection.getBoundingClientRect().top -
                   navbarHeight -
-                  extraOffset;
-
-                window.scrollTo({
-                  top: Math.max(targetTop, 0),
-                  behavior: "smooth",
-                });
+                  12;
+                window.scrollTo({ top: Math.max(targetTop, 0), behavior: "smooth" });
               }}
             >
               Find Your Venue
@@ -583,8 +317,10 @@ function App() {
       </div>
 
       <div className="content-area" id="search">
+        <BackgroundCarousel />
         <div className="App-header">
           <div className="main-content-wrapper">
+            <div className="glass-card">
             <div className="form-container">
               <div className="column">
                 <h3 id="event-type">Event type</h3>
@@ -624,9 +360,7 @@ function App() {
                     value={city}
                     onChange={(e) => {
                       setCity(e.target.value);
-                      if (e.target.value.trim().length > 3) {
-                        setCityError("");
-                      }
+                      if (e.target.value.trim().length > 3) setCityError("");
                     }}
                     className={cityError ? "input-error" : ""}
                   />
@@ -697,9 +431,7 @@ function App() {
                   type="text"
                   id="audience-input"
                   placeholder={
-                    venueType === "Artist Venue"
-                      ? "e.g., 10,000,000"
-                      : "e.g., 150"
+                    venueType === "Artist Venue" ? "e.g., 10,000,000" : "e.g., 150"
                   }
                   value={audienceInput}
                   onChange={(e) => setAudienceInput(e.target.value)}
@@ -747,7 +479,7 @@ function App() {
               )}
             </button>
 
-            {/* Search counter - only show if limits are enabled */}
+            {/* Search counter — only shown when limits are enabled */}
             <Show when="signed-in">
               {loadingSearchCount ? (
                 <p className="search-counter search-counter-loading">
@@ -768,8 +500,9 @@ function App() {
                 Sign in to track your searches
               </p>
             </Show>
+            </div>
 
-            {/* Limit reached with waitlist signup */}
+            {/* Limit reached — waitlist signup */}
             {limitReached && user && (
               <div className="limit-reached-container">
                 <div className="limit-reached-message">
@@ -800,16 +533,19 @@ function App() {
             )}
 
             {error && <p className="error-message">{error}</p>}
-            {streamingInProgress && (
-              <div className="streaming-indicator">
-                Finding venue {currentVenueCount + 1} of {totalVenuesToLoad}
-                ...
-              </div>
-            )}
+
             {streamingVenues.length > 0 && (
               <div className="response-container">
                 <h2>Top Venue Picks</h2>
-                {renderStreamingVenues()}
+                {streamingVenues.map((venue, index) => (
+                  <VenueCard
+                    key={index}
+                    venue={normalizeVenue(venue)}
+                    style={{
+                      animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`,
+                    }}
+                  />
+                ))}
                 <div className="save-section">
                   <button
                     onClick={handleSaveResults}

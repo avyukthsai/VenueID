@@ -1,86 +1,143 @@
-/* --- Auth Header (Navbar) --- */
+/* ============================================================
+   Navbar — Floating pill nav, Payard-inspired
+   ============================================================ */
+
+/* The outer bar is transparent — the pill IS the navbar visually */
 .auth-header {
-  border-radius: 0;
   width: 100%;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 14px 48px;
+  padding: 18px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
-  margin: 0;
-  box-shadow:
-    0 1px 12px rgba(0, 0, 0, 0.06),
-    0 2px 4px rgba(0, 0, 0, 0.04);
-}
-
-.auth-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
   left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, #10b981 0%, #0ea5e9 100%);
-  pointer-events: none;
+  z-index: 100;
+  background: transparent;
+  pointer-events: none; /* let clicks pass through the transparent bar */
 }
 
-.navbar-left {
-  flex: 1;
-  /* Empty or subtle tagline space */
+/* Re-enable pointer events on actual children */
+.auth-header > * {
+  pointer-events: auto;
 }
 
+/* --- Logo (left) --- */
 .navbar-logo {
-  font-size: 2em;
-  font-weight: 500;
-  font-family: "Outfit", sans-serif;
+  font-size: 1.5em;
+  font-weight: 700;
+  font-family: "Plus Jakarta Sans", "Outfit", sans-serif;
   background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   white-space: nowrap;
-  transition: filter 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.navbar-logo-icon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  transition:
+    filter 0.35s ease,
+    transform 0.25s ease;
 }
 
 .navbar-logo:hover {
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+  filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.6))
+    drop-shadow(0 0 28px rgba(14, 165, 233, 0.25));
+  transform: scale(1.03);
 }
 
-.navbar-right {
-  flex: 1;
+.navbar-logo-icon {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 20px;
+  flex-shrink: 0;
 }
 
-.navbar-saved-link {
+/* ============================================================
+   Centered Floating Pill
+   ============================================================ */
+.navbar-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 60px;
+  padding: 6px 8px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: box-shadow 0.3s ease;
+}
+
+.navbar-pill:hover {
+  box-shadow:
+    0 6px 32px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.navbar-pill-link {
   color: #374151;
   font-size: 14px;
+  font-weight: 500;
+  font-family: "Plus Jakarta Sans", sans-serif;
   text-decoration: none;
-  cursor: pointer;
-  transition: color 0.2s ease;
+  padding: 9px 20px;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.navbar-saved-link:hover {
-  color: #10b981;
+.navbar-pill-link:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+/* Green CTA inside the pill */
+.navbar-contact-btn {
+  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 9px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.navbar-contact-btn:hover {
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.navbar-contact-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+/* ============================================================
+   Right — Auth Buttons (dark pills, like Payard sign-in / sign-up)
+   ============================================================ */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .navbar-avatar-wrapper {
@@ -89,76 +146,56 @@
   justify-content: center;
 }
 
-.navbar-contact-btn {
-  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: filter 0.2s ease;
-}
-
-.navbar-contact-btn:hover {
-  filter: brightness(1.1);
-}
-
-.navbar-contact-btn:active {
-  filter: brightness(0.95);
-}
-
+/* "Log in" — outlined, dark text */
 .navbar-auth-btn {
-  background-color: transparent;
-  color: #374151;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-weight: 500;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  color: #1f2937;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 9px 22px;
+  border-radius: 50px;
+  font-weight: 600;
   font-size: 14px;
+  font-family: "Plus Jakarta Sans", sans-serif;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .navbar-auth-btn:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 1);
   border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
+/* "Sign up" — solid dark pill */
 .navbar-auth-btn-primary {
-  background-color: #10b981;
+  background: #111827;
   color: white;
-  border-color: #10b981;
+  border-color: #111827;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
 .navbar-auth-btn-primary:hover {
-  background-color: #0d9970;
-  border-color: #0d9970;
+  background: #1f2937;
+  border-color: #1f2937;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* --- Clerk Components Styling --- */
-.clerk-account-wrapper {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  contain: layout;
-}
-
+/* --- Clerk Avatar Overrides --- */
 .cl-userButtonBox,
 .cl-userButton {
-  border-radius: 8px !important;
-  width: 48px !important;
-  height: 48px !important;
+  border-radius: 50% !important;
+  width: 38px !important;
+  height: 38px !important;
 }
 
 .cl-userButtonTrigger {
-  border-radius: 8px !important;
-  width: 48px !important;
-  height: 48px !important;
+  border-radius: 50% !important;
+  width: 38px !important;
+  height: 38px !important;
   padding: 0 !important;
   transition: all 0.2s ease !important;
   display: flex !important;
@@ -167,16 +204,13 @@
 }
 
 .cl-userButtonTrigger:hover {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
 }
 
 .cl-userButtonAvatarBox {
-  width: 48px !important;
-  height: 48px !important;
-  border-radius: 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
   overflow: hidden !important;
 }
 
@@ -186,43 +220,36 @@
   object-fit: cover !important;
 }
 
-/* --- Responsive Design --- */
+/* ============================================================
+   Responsive
+   ============================================================ */
 @media (max-width: 1024px) {
   .auth-header {
-    padding: 12px 32px;
+    padding: 14px 24px;
   }
 }
 
 @media (max-width: 768px) {
   .auth-header {
-    padding: 12px 24px;
+    padding: 12px 16px;
     flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .navbar-logo {
+  .navbar-pill {
     position: relative;
     left: auto;
     transform: none;
-    margin: 0 auto;
-    width: 100%;
-    text-align: center;
     order: 3;
-  }
-
-  .navbar-left {
-    display: none;
+    width: 100%;
+    justify-content: center;
   }
 
   .navbar-right {
-    flex: 1;
-    gap: 12px;
+    gap: 8px;
   }
 
-  .navbar-saved-link {
-    font-size: 13px;
-  }
-
-  .navbar-contact-btn {
+  .navbar-auth-btn {
     padding: 8px 16px;
     font-size: 13px;
   }
@@ -230,18 +257,16 @@
 
 @media (max-width: 480px) {
   .auth-header {
-    padding: 12px 16px;
+    padding: 10px 12px;
   }
 
-  .navbar-right {
-    width: 100%;
-    order: 3;
-    margin-top: 12px;
+  .navbar-pill-link {
+    padding: 8px 14px;
+    font-size: 13px;
   }
 
-  .navbar-contact-btn,
-  .navbar-auth-btn {
-    padding: 8px 12px;
-    font-size: 12px;
+  .navbar-contact-btn {
+    padding: 8px 16px;
+    font-size: 13px;
   }
 }

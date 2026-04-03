@@ -6,10 +6,7 @@ import "./Navbar.css";
 function Navbar() {
   return (
     <div className="auth-header">
-      {/* Left side - placeholder */}
-      <div className="navbar-left"></div>
-
-      {/* Center - Logo (absolute positioning) */}
+      {/* Left — Logo */}
       <Link to="/" className="navbar-logo" style={{ textDecoration: "none" }}>
         <img
           src="/venue-id-favicon.svg"
@@ -19,20 +16,13 @@ function Navbar() {
         Venue ID
       </Link>
 
-      {/* Right side - Navigation items */}
-      <div className="navbar-right">
+      {/* Center — Pill nav */}
+      <nav className="navbar-pill">
         <Show when="signed-in">
-          <Link to="/history" className="navbar-saved-link">
+          <Link to="/history" className="navbar-pill-link">
             Saved
           </Link>
         </Show>
-
-        <Show when="signed-in">
-          <div className="navbar-avatar-wrapper">
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </Show>
-
         <button
           className="navbar-contact-btn"
           onClick={() => {
@@ -42,9 +32,17 @@ function Navbar() {
         >
           Contact Us
         </button>
+      </nav>
+
+      {/* Right — Auth */}
+      <div className="navbar-right">
+        <Show when="signed-in">
+          <div className="navbar-avatar-wrapper">
+            <UserButton afterSignOutUrl="/" />
+          </div>
+        </Show>
 
         <Show when="signed-out">
-          {/* Added asChild so Clerk uses our button instead of making its own */}
           <SignInButton mode="modal" asChild>
             <button className="navbar-auth-btn">Log in</button>
           </SignInButton>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/react";
 import { Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import VenueCard from "./components/VenueCard";
+import { parseVenues, normalizeVenue } from "./utils/venueUtils";
 import "./HistoryPage.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -20,9 +22,7 @@ function HistoryPage() {
     const fetchSearches = async () => {
       try {
         const response = await fetch(`${API_URL}/api/searches/${user.id}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch searches");
-        }
+        if (!response.ok) throw new Error("Failed to fetch searches");
         const data = await response.json();
         setSearches(data.data || []);
       } catch (err) {
@@ -41,16 +41,11 @@ function HistoryPage() {
     try {
       const response = await fetch(`${API_URL}/api/searches/${searchId}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to delete search");
-      }
-
+      if (!response.ok) throw new Error("Failed to delete search");
       setSearches(searches.filter((s) => s.id !== searchId));
     } catch (err) {
       console.error("Error deleting search:", err);
@@ -77,68 +72,11 @@ function HistoryPage() {
     return created.toLocaleDateString();
   };
 
-  const parseVenues = (resultsText) => {
-    const venues = resultsText
-      .split("-----")
-      .map((block) => block.trim())
-      .filter((block) => block);
-    return venues.map((venueText) => {
-      const lines = venueText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line);
-      const venue = {};
-      lines.forEach((line) => {
-        const match = line.match(/\*\*(.*?):\*\*\s*(.*)/);
-        if (match) {
-          const key = match[1].toLowerCase().replace(/\s+/g, "_");
-          venue[key] = match[2];
-        }
-      });
-      return venue;
-    });
-  };
-
   const getTopVenueName = (resultsText) => {
     const venues = parseVenues(resultsText);
-    return venues.length > 0 ? venues[0].venue : "Unknown Venue";
+    // raw parsed key is "venue" (from "**Venue:**" in text format)
+    return venues.length > 0 ? venues[0].venue || "Unknown Venue" : "Unknown Venue";
   };
-
-  const renderVenue = (venue) => (
-    <div key={venue.venue} className="venue-detail">
-      <h4>{venue.venue}</h4>
-      <p>
-        <strong>Why this venue?</strong> {venue.why_this_venue}
-      </p>
-      <p>
-        <strong>Address:</strong> {venue.address}
-      </p>
-      <p>
-        <strong>Capacity:</strong> {venue.capacity}
-      </p>
-      <p>
-        <strong>Location:</strong> {venue.location}
-      </p>
-      <p>
-        <strong>Features:</strong> {venue.features}
-      </p>
-      <p>
-        <strong>Website:</strong>{" "}
-        <a
-          href={venue.url_to_website}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {venue.url_to_website}
-        </a>
-      </p>
-      {venue["time_&_date"] && (
-        <p>
-          <strong>Time & Date:</strong> {venue["time_&_date"]}
-        </p>
-      )}
-    </div>
-  );
 
   if (loading) {
     return (
@@ -147,8 +85,8 @@ function HistoryPage() {
         <div className="history-page">
           <h1 className="page-title">Your saved searches</h1>
           <div className="search-history">
-            {[1, 2, 3].map((index) => (
-              <div key={index} className="skeleton-card">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="skeleton-card">
                 <div className="skeleton-header">
                   <div className="skeleton-line skeleton-title"></div>
                   <div className="skeleton-line skeleton-subtitle"></div>
@@ -241,9 +179,13 @@ function HistoryPage() {
                 {expandedId === search.id && (
                   <div className="card-details">
                     <div className="venues-container">
-                      {parseVenues(search.results).map((venue) =>
-                        renderVenue(venue),
-                      )}
+                      {parseVenues(search.results).map((venue, i) => (
+                        <VenueCard
+                          key={i}
+                          venue={normalizeVenue(venue)}
+                          variant="detail"
+                        />
+                      ))}
                     </div>
                   </div>
                 )}

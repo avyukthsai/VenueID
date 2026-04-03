@@ -1,0 +1,178 @@
+/* ============================================================
+   VenueCard.css — styles for the VenueCard component.
+   Used everywhere venues are displayed (App, SharePage, HistoryPage).
+   ============================================================ */
+
+/* --- Full venue card (App main results + SharePage) --- */
+.venue-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+  position: relative;
+}
+
+.venue-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 32px rgba(16, 185, 129, 0.12),
+    0 0 0 1px rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.venue-card h3 {
+  color: #10b981;
+  margin: 0 0 20px 0;
+  font-size: 1.7em;
+  font-weight: 700;
+  border-bottom: 2px solid #f0fdf4;
+  padding-bottom: 16px;
+  /* Leave space for absolute-positioned badge */
+  padding-right: 100px;
+}
+
+.venue-card p {
+  margin: 14px 0;
+  line-height: 1.8;
+  color: #4b5563;
+  font-size: 1em;
+}
+
+.venue-card strong {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.venue-card a {
+  color: #10b981;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+  word-break: break-all;
+}
+
+.venue-card a:hover {
+  color: #0ea5e9;
+  text-decoration: underline;
+}
+
+/* --- Match score badge (absolute pill in top-right corner) --- */
+.match-score-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  color: white;
+  font-weight: 700;
+  font-size: 0.88em;
+  letter-spacing: 0.2px;
+  cursor: help;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.venue-card:hover .match-score-badge {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- Read more toggle --- */
+.read-more-btn {
+  background: none;
+  border: none;
+  padding: 0 0 0 6px;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #10b981;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  font-family: inherit;
+}
+
+.read-more-btn:hover {
+  color: #0ea5e9;
+}
+
+/* --- Compact venue detail (HistoryPage expanded cards) --- */
+.venue-detail {
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  border-left: 4px solid #10b981;
+  transition: box-shadow 0.25s ease;
+  position: relative;
+}
+
+.venue-detail:hover {
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.13);
+}
+
+.venue-detail h4 {
+  margin: 0 0 16px 0;
+  color: #10b981;
+  font-size: 1.15em;
+  font-weight: 700;
+}
+
+.venue-detail p {
+  margin: 12px 0;
+  font-size: 0.95em;
+  color: #555;
+  line-height: 1.6;
+}
+
+.venue-detail strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.venue-detail a {
+  color: #10b981;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  word-break: break-all;
+}
+
+.venue-detail a:hover {
+  color: #0ea5e9;
+  text-decoration: underline;
+}
+
+/* --- Responsive --- */
+@media (max-width: 480px) {
+  .venue-card {
+    padding: 20px;
+  }
+
+  .venue-card h3 {
+    font-size: 1.3em;
+    padding-right: 80px;
+  }
+
+  .match-score-badge {
+    top: 16px;
+    right: 16px;
+    font-size: 0.82em;
+    padding: 4px 11px;
+  }
+
+  .venue-detail {
+    padding: 16px 12px;
+  }
+
+  .venue-detail h4 {
+    font-size: 1em;
+  }
+
+  .venue-detail p {
+    font-size: 0.9em;
+  }
+}

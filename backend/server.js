@@ -1,11 +1,5 @@
 const dotenv = require("dotenv");
-
-dotenv.config(); // Load environment variables from .env file FIRST
-
-console.log(
-  "STARTUP: SEARCH_LIMIT_ENABLED =",
-  JSON.stringify(process.env.SEARCH_LIMIT_ENABLED),
-);
+dotenv.config();
 
 const express = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -20,21 +14,18 @@ const {
 const {
   getVenuesByCategory,
   mergeAndDeduplicateVenues,
-  formatVenuesForPrompt: formatFoursquareVenues,
 } = require("./services/foursquare");
 
 const app = express();
-const port = 3001; // port for your backend
+const port = 3001;
 
-// Middleware
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
   }),
-); // Enable CORS for cross-origin requests from React app
-app.use(express.json()); // To parse JSON request bodies
+);
+app.use(express.json());
 
-// Configure Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const generationConfig = {
@@ -45,18 +36,17 @@ const generationConfig = {
   response_mime_type: "application/json",
 };
 
-// prompt for the AI
 const systemInstruction = `You will be given a venue type from the following list:
 artist venues, party venues, wedding venues, sports tournament, and theater show. You will be given the country, state, and city.
 
 **IMPORTANT - SPOTIFY MENTIONS:**
 Only for Artist Venue events: If the selected venue type is an artist venue, you will receive
-the artist's monthly Spotify listener count instead of the expected audience. Based on the monthly 
+the artist's monthly Spotify listener count instead of the expected audience. Based on the monthly
 listener count, estimate the expected audience amount in the whyThisVenue explanation.
 
 For ALL OTHER event types (party, wedding, sports, theater):
-NEVER mention Spotify, streaming data, listener counts, or music-related predictions in the 
-whyThisVenue explanation. Do not reference the input data source at all. Only discuss the 
+NEVER mention Spotify, streaming data, listener counts, or music-related predictions in the
+whyThisVenue explanation. Do not reference the input data source at all. Only discuss the
 expected audience size, event type, venue features, and location suitability.
 
 You will also receive VENUE SETTING information (Indoor, Outdoor, or Both), which should influence your recommendations:
@@ -104,12 +94,12 @@ Provide exactly 3 venue suggestions.`;
 app.use("/api/searches", searchesRouter);
 app.use("/api/shares", sharesRouter);
 
-// Test endpoint to verify server is working
 app.get("/test", (req, res) => {
   res.json({ message: "Server is working", timestamp: new Date() });
 });
 
-// Helper function to validate and complete venue data
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
 function validateAndCompleteVenue(venue) {
   const fallbacks = {
     name: "Contact venue for details",
@@ -124,47 +114,34 @@ function validateAndCompleteVenue(venue) {
 
   const completed = {};
   for (const key of Object.keys(fallbacks)) {
-    // Check if field exists and is not empty
     const value = venue[key];
-    if (!value || typeof value !== "string" || value.trim() === "") {
-      completed[key] = fallbacks[key];
-    } else {
-      completed[key] = value.trim();
-    }
+    completed[key] =
+      value && typeof value === "string" && value.trim() !== ""
+        ? value.trim()
+        : fallbacks[key];
   }
   return completed;
 }
 
-// Helper function to validate JSON response structure
 function validateVenueResponse(responseData) {
   try {
-    // Ensure it's an object with venues array
-    if (!responseData || !Array.isArray(responseData.venues)) {
-      return null;
-    }
+    if (!responseData || !Array.isArray(responseData.venues)) return null;
 
-    // Validate and complete each venue
     const validatedVenues = responseData.venues
-      .slice(0, 3) // Take only first 3 venues
+      .slice(0, 3)
       .map((venue) => validateAndCompleteVenue(venue));
 
-    // Ensure we have at least 1 venue
-    if (validatedVenues.length === 0) {
-      return null;
-    }
-
-    return { venues: validatedVenues };
+    return validatedVenues.length === 0 ? null : { venues: validatedVenues };
   } catch (error) {
     console.error("Error validating venue response:", error);
     return null;
   }
 }
 
-// Helper function to convert JSON venues to text format for frontend compatibility
 function convertJsonVenuesToText(venuesData) {
   return venuesData.venues
-    .map((venue) => {
-      return (
+    .map(
+      (venue) =>
         `**Venue:** ${venue.name}\n` +
         `**Why this venue?** ${venue.whyThisVenue}\n` +
         `**Address:** ${venue.address}\n` +
@@ -172,22 +149,16 @@ function convertJsonVenuesToText(venuesData) {
         `**Location:** ${venue.location}\n` +
         `**Features:** ${venue.features}\n` +
         `**Visit Website:** ${venue.website}\n` +
-        `**Time & Date:** ${venue.dateTime}`
-      );
-    })
+        `**Time & Date:** ${venue.dateTime}`,
+    )
     .join("\n-----\n");
 }
 
 function getGeminiErrorDetails(error) {
   const status =
-    error?.status ||
-    error?.response?.status ||
-    error?.response?.statusCode ||
-    null;
+    error?.status || error?.response?.status || error?.response?.statusCode || null;
   const message =
-    error?.message ||
-    error?.response?.statusText ||
-    "Unknown Gemini API error";
+    error?.message || error?.response?.statusText || "Unknown Gemini API error";
   return { status, message };
 }
 
@@ -195,114 +166,63 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Helper function to calculate match score (0-100)
 function calculateMatchScore(venue, venueType, audienceInput, index) {
   let score = 0;
 
-  // Capacity match (40% of score)
-  // Parse audience size from input
   const audienceSize = parseInt(audienceInput) || 100;
   const capacityStr = venue.capacity.toLowerCase();
-
-  // Try to extract a number from capacity string
   const capacityMatch = capacityStr.match(/\d+/);
   const capacityNum = capacityMatch ? parseInt(capacityMatch[0]) : 500;
 
-  // Score capacity match: closest match gets highest score
   const capacityRatio =
     Math.min(capacityNum, audienceSize) / Math.max(capacityNum, audienceSize);
   score += capacityRatio * 40;
 
-  // Event type match (30% of score)
-  // Check if venue description/features mention the event type favorably
   const venueText =
     `${venue.name} ${venue.whyThisVenue} ${venue.features}`.toLowerCase();
   const typeKeywords = {
-    "artist venue": [
-      "artist",
-      "live",
-      "music",
-      "performance",
-      "stage",
-      "sound",
-    ],
-    "party venue": [
-      "bar",
-      "club",
-      "lounge",
-      "nightlife",
-      "dance",
-      "event space",
-    ],
+    "artist venue": ["artist", "live", "music", "performance", "stage", "sound"],
+    "party venue": ["bar", "club", "lounge", "nightlife", "dance", "event space"],
     "wedding venue": ["wedding", "banquet", "reception", "ballroom", "elegant"],
     "sports tournament": ["sports", "arena", "field", "stadium", "game"],
-    "theater show": [
-      "theater",
-      "auditorium",
-      "stage",
-      "seating",
-      "performance",
-    ],
+    "theater show": ["theater", "auditorium", "stage", "seating", "performance"],
   };
 
   const keywords = typeKeywords[venueType.toLowerCase()] || [];
   const keywordMatches = keywords.filter((kw) => venueText.includes(kw)).length;
   score += (keywordMatches / Math.max(keywords.length, 1)) * 30;
 
-  // Location match (15% of score)
-  // Central/accessible locations get higher scores
   const locationText = venue.location.toLowerCase();
   const accessibilityKeywords = [
-    "downtown",
-    "central",
-    "convenient",
-    "accessible",
-    "public transit",
-    "highway",
-    "major road",
+    "downtown", "central", "convenient", "accessible",
+    "public transit", "highway", "major road",
   ];
   const accessibilityMatches = accessibilityKeywords.filter((kw) =>
     locationText.includes(kw),
   ).length;
   score += (accessibilityMatches / accessibilityKeywords.length) * 15;
 
-  // Features match (15% of score)
   const featuresText = venue.features.toLowerCase();
   const commonFeatures = [
-    "parking",
-    "food",
-    "catering",
-    "wifi",
-    "sound",
-    "lights",
-    "seating",
-    "accessibility",
+    "parking", "food", "catering", "wifi", "sound", "lights", "seating", "accessibility",
   ];
   const featureMatches = commonFeatures.filter((f) =>
     featuresText.includes(f),
   ).length;
   score += (featureMatches / commonFeatures.length) * 15;
 
-  // Now map the base score (0-100) to the appropriate range based on venue position
-  let finalScore;
-  if (index === 0) {
-    // First venue: 85-97 range
-    finalScore = 85 + (score / 100) * (97 - 85);
-  } else if (index === 1) {
-    // Second venue: 70-84 range
-    finalScore = 70 + (score / 100) * (84 - 70);
-  } else {
-    // Third venue: 55-69 range
-    finalScore = 55 + (score / 100) * (69 - 55);
-  }
-
-  return Math.round(finalScore);
+  // Map base score to position-based range: 1st=85-97, 2nd=70-84, 3rd=55-69
+  const ranges = [
+    [85, 97],
+    [70, 84],
+    [55, 69],
+  ];
+  const [min, max] = ranges[Math.min(index, 2)];
+  return Math.round(min + (score / 100) * (max - min));
 }
 
-// Helper function to check and increment search count
 async function checkAndIncrementSearchCount(userId) {
   try {
-    // Check if user exists in search counts
     const { data: existingUser, error: fetchError } = await supabase
       .from("user_search_counts")
       .select("search_count")
@@ -310,7 +230,6 @@ async function checkAndIncrementSearchCount(userId) {
       .single();
 
     if (fetchError && fetchError.code !== "PGRST116") {
-      // PGRST116 means no rows found, which is expected for new users
       console.error("Error fetching search count:", fetchError);
       return { error: "Failed to check search limit", code: "DB_ERROR" };
     }
@@ -319,7 +238,6 @@ async function checkAndIncrementSearchCount(userId) {
     if (existingUser) {
       currentCount = existingUser.search_count;
     } else {
-      // Insert new user with count 0
       const { error: insertError } = await supabase
         .from("user_search_counts")
         .insert([{ user_id: userId, search_count: 0 }]);
@@ -330,12 +248,10 @@ async function checkAndIncrementSearchCount(userId) {
       }
     }
 
-    // Check if limit is reached (5 searches)
     if (currentCount >= 5) {
       return { limitReached: true, currentCount };
     }
 
-    // Increment search count
     const { error: updateError } = await supabase
       .from("user_search_counts")
       .update({ search_count: currentCount + 1 })
@@ -349,11 +265,10 @@ async function checkAndIncrementSearchCount(userId) {
     return { limitReached: false, newCount: currentCount + 1 };
   } catch (error) {
     console.error("Unexpected error in checkAndIncrementSearchCount:", error);
-    return { error: "Unexpectederror", code: "UNKNOWN_ERROR" };
+    return { error: "Unexpected error", code: "UNKNOWN_ERROR" };
   }
 }
 
-// Helper function to get user's current search count
 async function getUserSearchCount(userId) {
   try {
     const { data, error } = await supabase
@@ -374,17 +289,12 @@ async function getUserSearchCount(userId) {
   }
 }
 
-// Helper function to add email to waitlist
 async function addToWaitlist(email) {
   try {
-    const { data, error } = await supabase
-      .from("waitlist")
-      .insert([{ email }])
-      .select();
+    const { error } = await supabase.from("waitlist").insert([{ email }]).select();
 
     if (error) {
       if (error.code === "23505") {
-        // Unique constraint violation - email already exists
         return { success: false, message: "Email already on waitlist" };
       }
       console.error("Error adding to waitlist:", error);
@@ -397,34 +307,144 @@ async function addToWaitlist(email) {
     return { success: false, message: "Failed to add email to waitlist" };
   }
 }
+
+/**
+ * Core logic shared by both venue endpoints:
+ * fetches real venue data, builds the prompt, calls Gemini with retries,
+ * and returns validated venue data.
+ *
+ * Returns { validatedData } on success or { error, statusCode } on failure.
+ */
+async function generateVenueRecommendations({
+  venueType,
+  country,
+  state,
+  city,
+  date,
+  time,
+  audienceInput,
+  venueSetting,
+  audienceType,
+  additionalRequirements,
+}) {
+  // Fetch real venue data from both APIs in parallel
+  let allVenues = [];
+  let venueContext = "";
+  try {
+    const [ticketmasterVenues, foursquareVenues] = await Promise.all([
+      getVenuesByLocation(city, state, venueType),
+      getVenuesByCategory(city, state, venueType),
+    ]);
+
+    allVenues = mergeAndDeduplicateVenues(ticketmasterVenues, foursquareVenues);
+
+    if (allVenues.length >= 5) {
+      venueContext = formatTicketmasterVenues(allVenues.slice(0, 15));
+      venueContext = venueContext.replace(
+        "REAL VENUES AVAILABLE IN THE AREA",
+        "REAL VENUES FROM MULTIPLE VERIFIED SOURCES",
+      );
+    }
+  } catch (error) {
+    console.error("Error fetching venues from APIs:", error);
+    // Continue without real venue data if APIs fail
+  }
+
+  let inputText =
+    `Venue Type: ${venueType}; ` +
+    `Country: ${country}; ` +
+    (state ? `State: ${state}; ` : "") +
+    `City: ${city}; ` +
+    `Date: ${date}; ` +
+    `Time: ${time}; ` +
+    `Expected Audience OR Spotify Monthly Listeners: ${audienceInput}; ` +
+    (venueSetting ? `Venue Setting: ${venueSetting}; ` : "") +
+    (audienceType ? `Audience Type: ${audienceType}; ` : "") +
+    (additionalRequirements && additionalRequirements.trim()
+      ? `Additional user requirements to factor into venue selection: ${additionalRequirements};`
+      : "");
+
+  let enhancedSystemInstruction = systemInstruction;
+
+  if (venueContext) {
+    inputText += venueContext;
+    enhancedSystemInstruction =
+      systemInstruction +
+      `\n\nIMPORTANT - REAL VENUE DATA PROVIDED:\nReal venue data from multiple verified sources has been provided above. You MUST choose the 3 best venues from the provided list. Only recommend venues from the provided list. Do NOT make up or imagine venues that are not in the list. Explain why each of the 3 venues from the list is ideal for this event.`;
+  } else if (allVenues.length > 0 && allVenues.length < 5) {
+    inputText += `\nNote: Only ${allVenues.length} real venues were found from multiple sources in this location. Real venue data is limited for this area. You may recommend venues based on typical venue types for this event type and location.`;
+  }
+
+  let retryCount = 0;
+  const maxRetries = 2;
+
+  while (retryCount <= maxRetries) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: "gemini-3-flash-preview",
+        generationConfig,
+        systemInstruction: enhancedSystemInstruction,
+      });
+
+      const result = await model.startChat({ history: [] }).sendMessage(inputText);
+      const responseText = result.response.text();
+
+      // Strip markdown code fences if present
+      let cleanedText = responseText;
+      if (cleanedText.includes("```json")) {
+        cleanedText = cleanedText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      } else if (cleanedText.includes("```")) {
+        cleanedText = cleanedText.replace(/```\n?/g, "").trim();
+      }
+
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.error("Failed to parse Gemini JSON response:", parseError.message);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          continue;
+        }
+        return { error: "Failed to parse AI response format.", statusCode: 500 };
+      }
+
+      const validatedData = validateVenueResponse(parsedResponse);
+      if (!validatedData) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          continue;
+        }
+        return { error: "Invalid AI response structure.", statusCode: 500 };
+      }
+
+      return { validatedData, responseText };
+    } catch (error) {
+      const geminiError = getGeminiErrorDetails(error);
+      console.error("Error calling Gemini API:", geminiError, error);
+      if (retryCount < maxRetries) {
+        retryCount++;
+        await delay(600 * retryCount);
+        continue;
+      }
+      return {
+        error: "Failed to communicate with the AI model.",
+        statusCode: 500,
+      };
+    }
+  }
+}
+
+// ─── Routes ─────────────────────────────────────────────────────────────────
+
+// Primary endpoint: returns structured JSON venues with match scores
 app.post("/api/venues/stream", async (req, res) => {
-  console.log("Streaming endpoint hit"); // Debug logging
   const {
-    venueType,
-    country,
-    state,
-    city,
-    date,
-    time,
-    audienceInput,
-    venueSetting,
-    audienceType,
-    additionalRequirements,
-    userId,
+    venueType, country, state, city, date, time,
+    audienceInput, venueSetting, audienceType,
+    additionalRequirements, userId,
   } = req.body;
 
-  console.log("Request payload:", {
-    venueType,
-    country,
-    state,
-    city,
-    date,
-    time,
-    audienceInput,
-    userId,
-  }); // Debug logging
-
-  // Detailed validation and error reporting
   const missingFields = [];
   if (!venueType) missingFields.push("venueType");
   if (!country) missingFields.push("country");
@@ -435,237 +455,54 @@ app.post("/api/venues/stream", async (req, res) => {
   if (!userId) missingFields.push("userId");
 
   if (missingFields.length > 0) {
-    console.error("Missing fields:", missingFields);
     return res.status(400).json({
       error: "All input fields are required.",
-      missingFields: missingFields,
-      received: {
-        venueType,
-        country,
-        state,
-        city,
-        date,
-        time,
-        audienceInput,
-        userId,
-      },
+      missingFields,
     });
   }
 
-  // Check search limit before proceeding (only if enabled)
-  const limitEnabledValue = process.env.SEARCH_LIMIT_ENABLED;
-  console.log(
-    "DEBUG: SEARCH_LIMIT_ENABLED =",
-    JSON.stringify(limitEnabledValue),
-    ", Type:",
-    typeof limitEnabledValue,
-  );
-  if (limitEnabledValue === "true") {
-    console.log("DEBUG: Limit check is ENABLED");
+  // Check search limit (when enabled)
+  if (process.env.SEARCH_LIMIT_ENABLED === "true") {
     const limitCheck = await checkAndIncrementSearchCount(userId);
     if (limitCheck.error) {
       return res.status(500).json({ error: limitCheck.error });
     }
     if (limitCheck.limitReached) {
-      console.log("DEBUG: Limit reached, returning 429");
       return res.status(429).json({
         error: "Search limit reached",
         message: "You've used all 5 free searches. Upgrade coming soon.",
       });
     }
-  } else {
-    console.log("DEBUG: Limit check is DISABLED, allowing search to proceed");
   }
 
-  // Fetch and process venues (non-streaming)
-  let allVenues = [];
-  let venueContext = "";
-  try {
-    const [ticketmasterVenues, foursquareVenues] = await Promise.all([
-      getVenuesByLocation(city, state, venueType),
-      getVenuesByCategory(city, state, venueType),
-    ]);
-
-    console.log(
-      `Fetched ${ticketmasterVenues.length} venues from Ticketmaster`,
-    );
-    console.log(`Fetched ${foursquareVenues.length} venues from Foursquare`);
-
-    // Merge and deduplicate results
-    allVenues = mergeAndDeduplicateVenues(ticketmasterVenues, foursquareVenues);
-    console.log(`Combined to ${allVenues.length} unique venues`);
-
-    if (allVenues.length >= 5) {
-      venueContext = formatTicketmasterVenues(
-        allVenues.slice(0, 15), // Use top 15 combined venues
-      );
-      // Update context message to reflect multiple sources
-      venueContext = venueContext.replace(
-        "REAL VENUES AVAILABLE IN THE AREA",
-        "REAL VENUES FROM MULTIPLE VERIFIED SOURCES",
-      );
-    }
-  } catch (error) {
-    console.error("Error fetching venues from APIs:", error);
-    // Continue without real venue data if APIs fail
-  }
-
-  let inputText =
-    `Venue Type: ${venueType}; ` +
-    `Country: ${country}; ` +
-    (state ? `State: ${state}; ` : "") +
-    `City: ${city}; ` +
-    `Date: ${date}; ` +
-    `Time: ${time}; ` +
-    `Expected Audience OR Spotify Monthly Listeners: ${audienceInput}; ` +
-    (venueSetting ? `Venue Setting: ${venueSetting}; ` : "") +
-    (audienceType ? `Audience Type: ${audienceType}; ` : "") +
-    (additionalRequirements && additionalRequirements.trim()
-      ? `Additional user requirements to factor into venue selection: ${additionalRequirements};`
-      : "");
-
-  let enhancedSystemInstruction = systemInstruction;
-
-  // If we have good real venue data, modify the prompt to be grounded in it
-  if (venueContext) {
-    inputText += venueContext;
-    enhancedSystemInstruction =
-      systemInstruction +
-      `\n\nIMPORTANT - REAL VENUE DATA PROVIDED:\nReal venue data from multiple verified sources has been provided above. You MUST choose the 3 best venues from the provided list. Only recommend venues from the provided list. Do NOT make up or imagine venues that are not in the list. Explain why each of the 3 venues from the list is ideal for this event.`;
-  } else if (allVenues.length > 0 && allVenues.length < 5) {
-    inputText += `\nNote: Only ${allVenues.length} real venues were found from multiple sources in this location. Real venue data is limited for this area. You may recommend venues based on typical venue types for this event type and location.`;
-  }
-
-  let retryCount = 0;
-  const maxRetries = 2;
-
-  while (retryCount <= maxRetries) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: "gemini-3-flash-preview",
-        generationConfig,
-        systemInstruction: enhancedSystemInstruction,
-      });
-
-      const chat = model.startChat({
-        history: [],
-      });
-
-      const result = await chat.sendMessage(inputText);
-      const responseText = result.response.text();
-
-      console.log("Raw Gemini response length:", responseText.length);
-      console.log("First 300 chars:", responseText.substring(0, 300));
-
-      // Try to parse JSON response
-      let parsedResponse;
-      let cleanedText = responseText;
-
-      // Try to extract JSON from markdown code blocks
-      if (cleanedText.includes("```json")) {
-        cleanedText = cleanedText
-          .replace(/```json\n?/g, "")
-          .replace(/```\n?/g, "")
-          .trim();
-      } else if (cleanedText.includes("```")) {
-        cleanedText = cleanedText.replace(/```\n?/g, "").trim();
-      }
-
-      try {
-        parsedResponse = JSON.parse(cleanedText);
-      } catch (parseError) {
-        console.error("Failed to parse JSON response:", parseError.message);
-        console.error(
-          "Attempted to parse text (first 300 chars):",
-          cleanedText.substring(0, 300),
-        );
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log(
-            `Retry attempt ${retryCount}/${maxRetries} due to JSON parse error`,
-          );
-          continue;
-        }
-        return res
-          .status(500)
-          .json({ error: "Failed to parse AI response format." });
-      }
-
-      // Validate venue response
-      const validatedData = validateVenueResponse(parsedResponse);
-      if (!validatedData) {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log(
-            `Retry attempt ${retryCount}/${maxRetries} due to validation error`,
-          );
-          continue;
-        }
-        return res
-          .status(500)
-          .json({ error: "Invalid AI response structure." });
-      }
-
-      // Process each venue with match score
-      validatedData.venues.forEach((venue, index) => {
-        const matchScore = calculateMatchScore(
-          venue,
-          venueType,
-          audienceInput,
-          index,
-        );
-        venue.matchScore = matchScore;
-      });
-
-      // Send all venues and response as JSON
-      return res.json({
-        response: responseText,
-        venues: validatedData.venues,
-        success: true,
-      });
-    } catch (error) {
-      const geminiError = getGeminiErrorDetails(error);
-      console.error("Error calling Gemini API:", geminiError, error);
-      if (retryCount < maxRetries) {
-        retryCount++;
-        await delay(600 * retryCount);
-        console.log(
-          `Retry attempt ${retryCount}/${maxRetries} due to API error`,
-        );
-        continue;
-      }
-      return res
-        .status(500)
-        .json({ error: "Failed to communicate with the AI model." });
-    }
-  }
-});
-
-app.post("/generate-venue", async (req, res) => {
-  const {
-    venueType,
-    country,
-    state,
-    city,
-    date,
-    time,
-    audienceInput,
-    venueSetting,
-    audienceType,
-    additionalRequirements,
-  } = req.body;
-
-  console.log("Generate endpoint hit with payload:", {
-    venueType,
-    country,
-    state,
-    city,
-    date,
-    time,
-    audienceInput,
+  const result = await generateVenueRecommendations({
+    venueType, country, state, city, date, time,
+    audienceInput, venueSetting, audienceType, additionalRequirements,
   });
 
-  // Detailed validation and error reporting
+  if (result.error) {
+    return res.status(result.statusCode || 500).json({ error: result.error });
+  }
+
+  // Attach match scores
+  result.validatedData.venues.forEach((venue, index) => {
+    venue.matchScore = calculateMatchScore(venue, venueType, audienceInput, index);
+  });
+
+  return res.json({
+    response: result.responseText,
+    venues: result.validatedData.venues,
+    success: true,
+  });
+});
+
+// Legacy endpoint: returns text-formatted venue response
+app.post("/generate-venue", async (req, res) => {
+  const {
+    venueType, country, state, city, date, time,
+    audienceInput, venueSetting, audienceType, additionalRequirements,
+  } = req.body;
+
   const missingFields = [];
   if (!venueType) missingFields.push("venueType");
   if (!country) missingFields.push("country");
@@ -675,163 +512,22 @@ app.post("/generate-venue", async (req, res) => {
   if (!audienceInput) missingFields.push("audienceInput");
 
   if (missingFields.length > 0) {
-    console.error("Missing fields:", missingFields);
     return res.status(400).json({
       error: "All input fields are required.",
-      missingFields: missingFields,
-      received: { venueType, country, state, city, date, time, audienceInput },
+      missingFields,
     });
   }
 
-  // Fetch real venues from both Ticketmaster and Foursquare simultaneously
-  let allVenues = [];
-  let venueContext = "";
-  try {
-    const [ticketmasterVenues, foursquareVenues] = await Promise.all([
-      getVenuesByLocation(city, state, venueType),
-      getVenuesByCategory(city, state, venueType),
-    ]);
+  const result = await generateVenueRecommendations({
+    venueType, country, state, city, date, time,
+    audienceInput, venueSetting, audienceType, additionalRequirements,
+  });
 
-    console.log(
-      `Fetched ${ticketmasterVenues.length} venues from Ticketmaster`,
-    );
-    console.log(`Fetched ${foursquareVenues.length} venues from Foursquare`);
-
-    // Merge and deduplicate results
-    allVenues = mergeAndDeduplicateVenues(ticketmasterVenues, foursquareVenues);
-    console.log(`Combined to ${allVenues.length} unique venues`);
-
-    if (allVenues.length >= 5) {
-      venueContext = formatTicketmasterVenues(
-        allVenues.slice(0, 15), // Use top 15 combined venues
-      );
-      // Update context message to reflect multiple sources
-      venueContext = venueContext.replace(
-        "REAL VENUES AVAILABLE IN THE AREA",
-        "REAL VENUES FROM MULTIPLE VERIFIED SOURCES",
-      );
-    }
-  } catch (error) {
-    console.error("Error fetching venues from APIs:", error);
-    // Continue without real venue data if APIs fail
+  if (result.error) {
+    return res.status(result.statusCode || 500).json({ error: result.error });
   }
 
-  let inputText =
-    `Venue Type: ${venueType}; ` +
-    `Country: ${country}; ` +
-    (state ? `State: ${state}; ` : "") +
-    `City: ${city}; ` +
-    `Date: ${date}; ` +
-    `Time: ${time}; ` +
-    `Expected Audience OR Spotify Monthly Listeners: ${audienceInput}; ` +
-    (venueSetting ? `Venue Setting: ${venueSetting}; ` : "") +
-    (audienceType ? `Audience Type: ${audienceType}; ` : "") +
-    (additionalRequirements && additionalRequirements.trim()
-      ? `Additional user requirements to factor into venue selection: ${additionalRequirements};`
-      : "");
-
-  let enhancedSystemInstruction = systemInstruction;
-
-  // If we have good real venue data, modify the prompt to be grounded in it
-  if (venueContext) {
-    inputText += venueContext;
-    enhancedSystemInstruction =
-      systemInstruction +
-      `\n\nIMPORTANT - REAL VENUE DATA PROVIDED:\nReal venue data from multiple verified sources has been provided above. You MUST choose the 3 best venues from the provided list. Only recommend venues from the provided list. Do NOT make up or imagine venues that are not in the list. Explain why each of the 3 venues from the list is ideal for this event.`;
-  } else if (allVenues.length > 0 && allVenues.length < 5) {
-    inputText += `\nNote: Only ${allVenues.length} real venues were found from multiple sources in this location. Real venue data is limited for this area. You may recommend venues based on typical venue types for this event type and location.`;
-  }
-
-  let retryCount = 0;
-  const maxRetries = 2;
-
-  while (retryCount <= maxRetries) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: "gemini-3-flash-preview",
-        generationConfig,
-        systemInstruction: enhancedSystemInstruction,
-      });
-
-      const chat = model.startChat({
-        history: [],
-      });
-
-      const result = await chat.sendMessage(inputText);
-      const responseText = result.response.text();
-
-      console.log("Raw Gemini response length:", responseText.length);
-      console.log("First 300 chars:", responseText.substring(0, 300));
-
-      // Try to parse JSON response
-      let parsedResponse;
-      let cleanedText = responseText;
-
-      // Try to extract JSON from markdown code blocks
-      if (cleanedText.includes("```json")) {
-        cleanedText = cleanedText
-          .replace(/```json\n?/g, "")
-          .replace(/```\n?/g, "")
-          .trim();
-      } else if (cleanedText.includes("```")) {
-        cleanedText = cleanedText.replace(/```\n?/g, "").trim();
-      }
-
-      try {
-        parsedResponse = JSON.parse(cleanedText);
-      } catch (parseError) {
-        console.error("Failed to parse JSON response:", parseError.message);
-        console.error(
-          "Attempted to parse text (first 300 chars):",
-          cleanedText.substring(0, 300),
-        );
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log(
-            `Retry attempt ${retryCount}/${maxRetries} due to JSON parse error`,
-          );
-          continue;
-        }
-        return res
-          .status(500)
-          .json({ error: "Failed to parse AI response format." });
-      }
-
-      // Validate and complete the venue data
-      const validatedData = validateVenueResponse(parsedResponse);
-      if (!validatedData) {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log(
-            `Retry attempt ${retryCount}/${maxRetries} due to validation error`,
-          );
-          continue;
-        }
-        return res
-          .status(500)
-          .json({ error: "Invalid AI response structure." });
-      }
-
-      // Convert validated JSON to text format for frontend compatibility
-      const textResponse = convertJsonVenuesToText(validatedData);
-      res.json({ response: textResponse });
-      return;
-    } catch (error) {
-      const geminiError = getGeminiErrorDetails(error);
-      console.error("Error calling Gemini API:", geminiError, error);
-      if (retryCount < maxRetries) {
-        retryCount++;
-        await delay(600 * retryCount);
-        console.log(
-          `Retry attempt ${retryCount}/${maxRetries} due to API error`,
-        );
-        continue;
-      }
-      return res
-        .status(500)
-        .json({ error: "Failed to communicate with the AI model." });
-    }
-  }
+  res.json({ response: convertJsonVenuesToText(result.validatedData) });
 });
 
 // Get user's current search count
@@ -844,11 +540,7 @@ app.get("/api/searches/count/:userId", async (req, res) => {
 
   const limitsEnabled = process.env.SEARCH_LIMIT_ENABLED === "true";
 
-  // If limits are disabled, return 0 searches and limitsEnabled flag
   if (!limitsEnabled) {
-    console.log(
-      "DEBUG: Limits disabled, returning searchCount: 0, limitsEnabled: false",
-    );
     return res.json({ searchCount: 0, limitsEnabled: false });
   }
 
@@ -882,7 +574,6 @@ app.listen(port, () => {
   console.log(`Backend server listening on port ${port}`);
 });
 
-// Handle uncaught errors
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
 });

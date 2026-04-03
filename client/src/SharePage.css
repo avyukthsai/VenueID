@@ -1,3 +1,5 @@
+@import "./components/shared.css";
+
 .share-container {
   display: flex;
   flex-direction: column;
@@ -38,26 +40,6 @@
   -webkit-text-fill-color: transparent;
 }
 
-.discover-button {
-  padding: 12px 28px;
-  font-size: 0.95em;
-  font-weight: 700;
-  text-decoration: none;
-  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-  white-space: nowrap;
-}
-
-.discover-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
-}
-
 .response-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -68,60 +50,12 @@
 .response-container h2 {
   font-size: 1.8em;
   font-weight: 700;
-  color: #333;
   margin: 0 0 32px 0;
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-.venue-card {
-  background: white;
-  border-radius: 12px;
-  padding: 28px;
-  margin-bottom: 24px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-}
-
-.venue-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.venue-card h3 {
-  font-size: 1.3em;
-  font-weight: 700;
-  color: #10b981;
-  margin: 0 0 16px 0;
-}
-
-.venue-card p {
-  margin: 12px 0;
-  color: #555;
-  font-size: 0.95em;
-  line-height: 1.6;
-}
-
-.venue-card strong {
-  color: #1f2937;
-  font-weight: 600;
-}
-
-.venue-card a {
-  color: #10b981;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s ease;
-  word-break: break-all;
-}
-
-.venue-card a:hover {
-  color: #0ea5e9;
-  text-decoration: underline;
 }
 
 /* --- Error State --- */
@@ -151,71 +85,6 @@
   line-height: 1.6;
 }
 
-.back-button {
-  padding: 14px 40px;
-  font-size: 1em;
-  font-weight: 700;
-  text-decoration: none;
-  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-  display: inline-block;
-}
-
-.back-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
-}
-
-/* --- Skeleton Loading --- */
-.skeleton-card {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-  padding: 28px;
-  margin-bottom: 24px;
-}
-
-.skeleton-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.skeleton-line {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 6px;
-}
-
-.skeleton-title {
-  height: 20px;
-  width: 60%;
-  margin-bottom: 12px;
-}
-
-.skeleton-subtitle {
-  height: 16px;
-  width: 40%;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
 /* --- Responsive --- */
 @media (max-width: 768px) {
   .share-banner {
@@ -240,11 +109,6 @@
 
   .response-container h2 {
     font-size: 1.3em;
-  }
-
-  .venue-card {
-    padding: 20px;
-    margin-bottom: 16px;
   }
 
   .error-state {

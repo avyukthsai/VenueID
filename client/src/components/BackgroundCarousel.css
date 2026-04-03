@@ -1,0 +1,31 @@
+/* ============================================================
+   BackgroundCarousel — fullscreen image crossfade behind form
+   ============================================================ */
+.bg-carousel {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bg-carousel-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 1.8s ease-in-out;
+  will-change: opacity;
+}
+
+.bg-carousel-slide-active {
+  opacity: 1;
+}
+
+.bg-carousel-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 1;
+}
