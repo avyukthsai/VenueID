@@ -1824,3 +1824,99 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Clerk dark theme — hover / focus / active overrides
+   These can't be expressed in the JS appearance object.
+   ============================================================ */
+
+/* Social button hover */
+.cl-socialButtonsBlockButton:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Form input focus */
+.cl-formFieldInput:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14) !important;
+  outline: none !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Primary button hover */
+.cl-formButtonPrimary:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+/* Footer link hover */
+.cl-footerActionLink:hover {
+  color: #34d399 !important;
+}
+
+/* Alternative methods hover */
+.cl-alternativeMethodsBlockButton:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Popover action button hover */
+.cl-userButtonPopoverActionButton:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Navbar button hover + active */
+.cl-navbarButton:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+}
+
+.cl-navbarButton[aria-current],
+.cl-navbarButton[data-active="true"],
+.cl-active .cl-navbarButton {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #10b981 !important;
+}
+
+/* Profile section primary button hover */
+.cl-profileSectionPrimaryButton:hover {
+  background: rgba(16, 185, 129, 0.14) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* OTP input focus */
+.cl-otpCodeFieldInput:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14) !important;
+}
+
+/* Accordion hover */
+.cl-accordionTriggerButton:hover {
+  color: #ffffff !important;
+}
+
+/* Hide Clerk branding everywhere */
+.cl-poweredByClerkText,
+.cl-poweredByClerk,
+[class*="poweredByClerk"] {
+  display: none !important;
+}
+
+/* Scrollbar inside Clerk modals */
+.cl-scrollBox::-webkit-scrollbar,
+.cl-pageScrollBox::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cl-scrollBox::-webkit-scrollbar-thumb,
+.cl-pageScrollBox::-webkit-scrollbar-thumb {
+  background: #10b981;
+  border-radius: 2px;
+}
+
+.cl-scrollBox::-webkit-scrollbar-track,
+.cl-pageScrollBox::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -153,32 +153,23 @@
   box-shadow: 0 4px 20px rgba(255, 255, 255, 0.18);
 }
 
-/* --- Clerk Avatar --- */
-.cl-userButtonBox,
-.cl-userButton {
-  border-radius: 50% !important;
-  width: 38px !important;
-  height: 38px !important;
-}
-
+/* --- Clerk UserButton trigger --- */
 .cl-userButtonTrigger {
   border-radius: 50% !important;
-  width: 38px !important;
-  height: 38px !important;
-  padding: 0 !important;
+  border: 2px solid rgba(16, 185, 129, 0.32) !important;
   transition: all 0.2s ease !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  padding: 2px !important;
+  background: transparent !important;
 }
 
 .cl-userButtonTrigger:hover {
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+  border-color: rgba(16, 185, 129, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14) !important;
 }
 
 .cl-userButtonAvatarBox {
-  width: 38px !important;
-  height: 38px !important;
+  width: 34px !important;
+  height: 34px !important;
   border-radius: 50% !important;
   overflow: hidden !important;
 }
