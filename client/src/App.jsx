@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 import { Show, useUser } from "@clerk/react";
+import { Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import VenueCard from "./components/VenueCard";
 import BackgroundCarousel from "./components/BackgroundCarousel";
@@ -8,6 +9,102 @@ import {
   convertStreamingVenuesToText,
   normalizeVenue,
 } from "./utils/venueUtils";
+
+function ContactModal({ onClose }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const body = `Name: ${name}\nEmail: ${email}\n\n${message}`;
+    const mailtoLink = `mailto:support@venueid.app?subject=${encodeURIComponent(subject || "Venue ID Inquiry")}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink);
+    setSubmitted(true);
+    setTimeout(onClose, 2500);
+  };
+
+  return (
+    <div className="contact-overlay" onClick={onClose}>
+      <div className="contact-modal" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="contact-modal-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+        {submitted ? (
+          <div className="contact-modal-success">
+            <div className="contact-success-icon">✓</div>
+            <h2>Message sent!</h2>
+            <p>We'll get back to you shortly.</p>
+          </div>
+        ) : (
+          <>
+            <div className="contact-modal-header">
+              <h2>Get in Touch</h2>
+              <p>Have a question or feedback? We'd love to hear from you.</p>
+            </div>
+            <form onSubmit={handleSubmit} className="contact-form">
+              <div className="contact-form-row">
+                <div className="contact-form-field">
+                  <label htmlFor="contact-name">Name</label>
+                  <input
+                    id="contact-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    required
+                  />
+                </div>
+                <div className="contact-form-field">
+                  <label htmlFor="contact-email">Email</label>
+                  <input
+                    id="contact-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="contact-form-field">
+                <label htmlFor="contact-subject">Subject</label>
+                <input
+                  id="contact-subject"
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="What's this about?"
+                />
+              </div>
+              <div className="contact-form-field">
+                <label htmlFor="contact-message">Message</label>
+                <textarea
+                  id="contact-message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Tell us how we can help..."
+                  rows={5}
+                  required
+                />
+              </div>
+              <button type="submit" className="contact-form-submit">
+                Send Message →
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -22,6 +119,7 @@ function Toast({ message, type, onClose }) {
 
 function App() {
   const { user } = useUser();
+  const [showContact, setShowContact] = useState(false);
   const [venueType, setVenueType] = useState("Artist Venue");
   const [country] = useState("US");
   const [state, setState] = useState("");
@@ -259,7 +357,7 @@ function App() {
 
   return (
     <div className="App">
-      <Navbar />
+      <Navbar onOpenContact={() => setShowContact(true)} />
 
       {/* Hero Section */}
       <div className="hero-section">
@@ -268,26 +366,27 @@ function App() {
             <path
               d="M0,150 Q360,100 720,150 T1440,150"
               fill="none"
-              stroke="rgba(0,0,0,0.036)"
+              stroke="rgba(255,255,255,0.04)"
               strokeWidth="2"
             />
             <path
               d="M0,220 Q360,180 720,220 T1440,220"
               fill="none"
-              stroke="rgba(0,0,0,0.036)"
+              stroke="rgba(255,255,255,0.04)"
               strokeWidth="2"
             />
             <path
               d="M0,280 Q360,250 720,280 T1440,280"
               fill="none"
-              stroke="rgba(0,0,0,0.036)"
+              stroke="rgba(255,255,255,0.04)"
               strokeWidth="2"
             />
           </svg>
         </div>
         <div className="hero-content">
           <h2 className="hero-headline">
-            Find the perfect venue for any event.
+            Find the perfect venue{" "}
+            <span className="hero-headline-accent">for any event.</span>
           </h2>
           <p className="hero-subtitle">
             AI-powered recommendations grounded in real venue data across
@@ -307,7 +406,10 @@ function App() {
                   eventTypeSection.getBoundingClientRect().top -
                   navbarHeight -
                   12;
-                window.scrollTo({ top: Math.max(targetTop, 0), behavior: "smooth" });
+                window.scrollTo({
+                  top: Math.max(targetTop, 0),
+                  behavior: "smooth",
+                });
               }}
             >
               Find Your Venue
@@ -321,185 +423,239 @@ function App() {
         <div className="App-header">
           <div className="main-content-wrapper">
             <div className="glass-card">
-            <div className="form-container">
-              <div className="column">
-                <h3 id="event-type">Event type</h3>
-                <div className="radio-group">
-                  {venueOptions.map((option) => (
-                    <div
-                      key={option}
-                      className="radio-option"
-                      onClick={() => setVenueType(option)}
-                    >
-                      <input
-                        type="radio"
-                        id={option}
-                        name="venueType"
-                        value={option}
-                        checked={venueType === option}
-                        onChange={(e) => setVenueType(e.target.value)}
-                      />
-                      <label htmlFor={option}>{option}</label>
-                    </div>
-                  ))}
+              <div className="form-container">
+                <div className="column">
+                  <h3 id="event-type">Event type</h3>
+                  <div className="radio-group">
+                    {venueOptions.map((option) => (
+                      <div
+                        key={option}
+                        className="radio-option"
+                        onClick={() => setVenueType(option)}
+                      >
+                        <input
+                          type="radio"
+                          id={option}
+                          name="venueType"
+                          value={option}
+                          checked={venueType === option}
+                          onChange={(e) => setVenueType(e.target.value)}
+                        />
+                        <label htmlFor={option}>{option}</label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="column">
-                <h3>Location</h3>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "24px",
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="City"
-                    value={city}
-                    onChange={(e) => {
-                      setCity(e.target.value);
-                      if (e.target.value.trim().length > 3) setCityError("");
+                <div className="column">
+                  <h3>Location</h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "24px",
                     }}
-                    className={cityError ? "input-error" : ""}
-                  />
+                  >
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={city}
+                      onChange={(e) => {
+                        setCity(e.target.value);
+                        if (e.target.value.trim().length > 3) setCityError("");
+                      }}
+                      className={cityError ? "input-error" : ""}
+                    />
+                    <select
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      className="state-select"
+                    >
+                      <option value="">State</option>
+                      <option value="AL">Alabama</option>
+                      <option value="AK">Alaska</option>
+                      <option value="AZ">Arizona</option>
+                      <option value="AR">Arkansas</option>
+                      <option value="CA">California</option>
+                      <option value="CO">Colorado</option>
+                      <option value="CT">Connecticut</option>
+                      <option value="DE">Delaware</option>
+                      <option value="FL">Florida</option>
+                      <option value="GA">Georgia</option>
+                      <option value="HI">Hawaii</option>
+                      <option value="ID">Idaho</option>
+                      <option value="IL">Illinois</option>
+                      <option value="IN">Indiana</option>
+                      <option value="IA">Iowa</option>
+                      <option value="KS">Kansas</option>
+                      <option value="KY">Kentucky</option>
+                      <option value="LA">Louisiana</option>
+                      <option value="ME">Maine</option>
+                      <option value="MD">Maryland</option>
+                      <option value="MA">Massachusetts</option>
+                      <option value="MI">Michigan</option>
+                      <option value="MN">Minnesota</option>
+                      <option value="MS">Mississippi</option>
+                      <option value="MO">Missouri</option>
+                      <option value="MT">Montana</option>
+                      <option value="NE">Nebraska</option>
+                      <option value="NV">Nevada</option>
+                      <option value="NH">New Hampshire</option>
+                      <option value="NJ">New Jersey</option>
+                      <option value="NM">New Mexico</option>
+                      <option value="NY">New York</option>
+                      <option value="NC">North Carolina</option>
+                      <option value="ND">North Dakota</option>
+                      <option value="OH">Ohio</option>
+                      <option value="OK">Oklahoma</option>
+                      <option value="OR">Oregon</option>
+                      <option value="PA">Pennsylvania</option>
+                      <option value="RI">Rhode Island</option>
+                      <option value="SC">South Carolina</option>
+                      <option value="SD">South Dakota</option>
+                      <option value="TN">Tennessee</option>
+                      <option value="TX">Texas</option>
+                      <option value="UT">Utah</option>
+                      <option value="VT">Vermont</option>
+                      <option value="VA">Virginia</option>
+                      <option value="WA">Washington</option>
+                      <option value="WV">West Virginia</option>
+                      <option value="WI">Wisconsin</option>
+                      <option value="WY">Wyoming</option>
+                      <option value="DC">Washington D.C.</option>
+                    </select>
+                  </div>
+                  {cityError && <span className="error-text">{cityError}</span>}
+
+                  <h3 style={{ marginTop: "24px" }}>Venue setting</h3>
+                  <div className="button-group">
+                    {["Indoor", "Outdoor", "Both"].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`button-option ${venueSetting === option ? "active" : ""}`}
+                        onClick={() => setVenueSetting(option)}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+
+                  <h3 style={{ marginTop: "24px" }}>Additional requirements</h3>
                   <input
                     type="text"
-                    placeholder="State"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
+                    id="additional-requirements"
+                    placeholder="Any specific needs? (optional)"
+                    value={additionalRequirements}
+                    onChange={(e) => setAdditionalRequirements(e.target.value)}
+                    className="additional-requirements-input"
                   />
                 </div>
-                {cityError && <span className="error-text">{cityError}</span>}
 
-                <h3 style={{ marginTop: "24px" }}>Venue setting</h3>
-                <div className="button-group">
-                  {["Indoor", "Outdoor", "Both"].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      className={`button-option ${venueSetting === option ? "active" : ""}`}
-                      onClick={() => setVenueSetting(option)}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
+                <div className="column">
+                  <h3>Event date & time</h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "24px",
+                    }}
+                  >
+                    <input
+                      type="date"
+                      id="event-date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      id="event-time"
+                      placeholder="e.g., 7:00 PM"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                    />
+                  </div>
 
-                <h3 style={{ marginTop: "24px" }}>Additional requirements</h3>
-                <input
-                  type="text"
-                  id="additional-requirements"
-                  placeholder="Any specific needs? (optional)"
-                  value={additionalRequirements}
-                  onChange={(e) => setAdditionalRequirements(e.target.value)}
-                  className="additional-requirements-input"
-                />
-              </div>
-
-              <div className="column">
-                <h3>Event date & time</h3>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "24px",
-                  }}
-                >
-                  <input
-                    type="date"
-                    id="event-date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
+                  <h3 style={{ marginTop: "24px" }}>
+                    {venueType === "Artist Venue"
+                      ? "Spotify Monthly Listeners"
+                      : "Expected audience"}
+                  </h3>
                   <input
                     type="text"
-                    id="event-time"
-                    placeholder="e.g., 7:00 PM"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
+                    id="audience-input"
+                    placeholder={
+                      venueType === "Artist Venue"
+                        ? "e.g., 10,000,000"
+                        : "e.g., 150"
+                    }
+                    value={audienceInput}
+                    onChange={(e) => setAudienceInput(e.target.value)}
                   />
-                </div>
 
-                <h3 style={{ marginTop: "24px" }}>
-                  {venueType === "Artist Venue"
-                    ? "Spotify Monthly Listeners"
-                    : "Expected audience"}
-                </h3>
-                <input
-                  type="text"
-                  id="audience-input"
-                  placeholder={
-                    venueType === "Artist Venue" ? "e.g., 10,000,000" : "e.g., 150"
-                  }
-                  value={audienceInput}
-                  onChange={(e) => setAudienceInput(e.target.value)}
-                />
-
-                <h3 style={{ marginTop: "24px" }}>Audience type</h3>
-                <div className="radio-group">
-                  {[
-                    "General / All Ages",
-                    "21+ Only",
-                    "Corporate / Professional",
-                  ].map((option) => (
-                    <div
-                      key={option}
-                      className="radio-option"
-                      onClick={() => setAudienceType(option)}
-                    >
-                      <input
-                        type="radio"
-                        id={`audience-${option}`}
-                        name="audienceType"
-                        value={option}
-                        checked={audienceType === option}
-                        onChange={(e) => setAudienceType(e.target.value)}
-                      />
-                      <label htmlFor={`audience-${option}`}>{option}</label>
-                    </div>
-                  ))}
+                  <h3 style={{ marginTop: "24px" }}>Audience type</h3>
+                  <div className="radio-group">
+                    {[
+                      "General / All Ages",
+                      "21+ Only",
+                      "Corporate / Professional",
+                    ].map((option) => (
+                      <div
+                        key={option}
+                        className="radio-option"
+                        onClick={() => setAudienceType(option)}
+                      >
+                        <input
+                          type="radio"
+                          id={`audience-${option}`}
+                          name="audienceType"
+                          value={option}
+                          checked={audienceType === option}
+                          onChange={(e) => setAudienceType(e.target.value)}
+                        />
+                        <label htmlFor={`audience-${option}`}>{option}</label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              onClick={handleStreamingSubmit}
-              disabled={loading || (user && limitReached)}
-              className="generate-button"
-            >
-              {loading ? (
-                <>
-                  <span className="spinner"></span>
-                  Finding venues...
-                </>
-              ) : (
-                "Find Venues"
-              )}
-            </button>
+              <button
+                onClick={handleStreamingSubmit}
+                disabled={loading || (user && limitReached)}
+                className="generate-button"
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner"></span>
+                    Finding venues...
+                  </>
+                ) : (
+                  "Find Venues"
+                )}
+              </button>
 
-            {/* Search counter — only shown when limits are enabled */}
-            <Show when="signed-in">
-              {loadingSearchCount ? (
-                <p className="search-counter search-counter-loading">
-                  Loading...
+              {/* Search counter — only shown when limits are enabled */}
+              <Show when="signed-in">
+                {loadingSearchCount ? (
+                  <p className="search-counter search-counter-loading">
+                    Loading...
+                  </p>
+                ) : limitsEnabled ? (
+                  <p
+                    className={`search-counter search-counter-${searchCount >= 5 ? "max" : searchCount >= 4 ? "warning" : "normal"}`}
+                  >
+                    {searchCount === 5
+                      ? "Search limit reached"
+                      : `${searchCount} of 5 free searches used`}
+                  </p>
+                ) : null}
+              </Show>
+              <Show when="signed-out">
+                <p className="search-counter search-counter-signout">
+                  Sign in to track your searches
                 </p>
-              ) : limitsEnabled ? (
-                <p
-                  className={`search-counter search-counter-${searchCount >= 5 ? "max" : searchCount >= 4 ? "warning" : "normal"}`}
-                >
-                  {searchCount === 5
-                    ? "Search limit reached"
-                    : `${searchCount} of 5 free searches used`}
-                </p>
-              ) : null}
-            </Show>
-            <Show when="signed-out">
-              <p className="search-counter search-counter-signout">
-                Sign in to track your searches
-              </p>
-            </Show>
+              </Show>
             </div>
 
             {/* Limit reached — waitlist signup */}
@@ -581,6 +737,105 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Why Venue ID — bold asymmetric bento */}
+      <section className="features-section">
+        <div className="features-inner">
+          <div className="features-header">
+            <p className="features-eyebrow">Why Venue ID</p>
+            <h2 className="features-heading">
+              The smarter way<br />
+              to find your{" "}
+              <span className="features-heading-accent">venue.</span>
+            </h2>
+          </div>
+
+          <div className="features-grid">
+            <div className="feature-card feature-card--large">
+              <div className="feature-card-glow" />
+              <span className="feature-num">01</span>
+              <div className="feature-card-body">
+                <h3>Real Venue<br />Data</h3>
+                <p>Grounded in live data from Foursquare and Ticketmaster. No hallucinations, no placeholders — only real venues.</p>
+              </div>
+            </div>
+
+            <div className="feature-card">
+              <span className="feature-num">02</span>
+              <div className="feature-card-body">
+                <h3>AI‑Powered Matching</h3>
+                <p>Gemini scores every venue on capacity, event type, location, and features.</p>
+              </div>
+            </div>
+
+            <div className="feature-card">
+              <span className="feature-num">03</span>
+              <div className="feature-card-body">
+                <h3>Instant Results</h3>
+                <p>Three curated picks in seconds. Save to history and revisit any time.</p>
+              </div>
+            </div>
+
+            <div className="feature-card feature-card--wide">
+              <span className="feature-num">04</span>
+              <div className="feature-card-body">
+                <h3>Share with Anyone</h3>
+                <p>One-click shareable links. Send your venue picks to clients or collaborators instantly.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="site-footer">
+        <div className="footer-top">
+          <div className="footer-brand">
+            <Link to="/" className="footer-logo">
+              <img src="/venue-id-favicon.svg" alt="Venue ID" />
+              Venue ID
+            </Link>
+            <p className="footer-tagline">
+              AI-powered venue recommendations grounded in real venue data
+              across thousands of locations.
+            </p>
+          </div>
+          <div className="footer-links">
+            <div className="footer-col">
+              <h4>Product</h4>
+              <a
+                href="#search"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById("search")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                Find Venues
+              </a>
+              <Link to="/history">Saved Searches</Link>
+            </div>
+            <div className="footer-col">
+              <h4>Company</h4>
+              <button onClick={() => setShowContact(true)}>Contact Us</button>
+              <a href="mailto:support@venueid.app">Support</a>
+            </div>
+            <div className="footer-col">
+              <h4>Legal</h4>
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Service</a>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom-wrapper">
+          <div className="footer-bottom">
+            <p>© {new Date().getFullYear()} Venue ID. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+      {showContact && <ContactModal onClose={() => setShowContact(false)} />}
     </div>
   );
 }

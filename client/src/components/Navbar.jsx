@@ -1,41 +1,36 @@
-import React from "react";
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 import { Link } from "react-router-dom";
 import "./Navbar.css";
 
-function Navbar() {
+function Navbar({ onOpenContact }) {
   return (
     <div className="auth-header">
-      {/* Left — Logo */}
-      <Link to="/" className="navbar-logo" style={{ textDecoration: "none" }}>
-        <img
-          src="/venue-id-favicon.svg"
-          alt="Venue ID"
-          className="navbar-logo-icon"
-        />
-        Venue ID
-      </Link>
-
-      {/* Center — Pill nav */}
-      <nav className="navbar-pill">
+      {/* Left — Logo + Saved link */}
+      <div className="navbar-left">
+        <Link to="/" className="navbar-logo" style={{ textDecoration: "none" }}>
+          <img
+            src="/venue-id-favicon.svg"
+            alt="Venue ID"
+            className="navbar-logo-icon"
+          />
+          Venue ID
+        </Link>
         <Show when="signed-in">
-          <Link to="/history" className="navbar-pill-link">
+          <Link to="/history" className="navbar-saved-btn">
             Saved
           </Link>
         </Show>
+      </div>
+
+      {/* Right — Contact Us pill + Auth */}
+      <div className="navbar-right">
         <button
           className="navbar-contact-btn"
-          onClick={() => {
-            window.location.href =
-              "mailto:support@venueid.app?subject=Venue%20ID%20Inquiry";
-          }}
+          onClick={onOpenContact}
         >
           Contact Us
         </button>
-      </nav>
 
-      {/* Right — Auth */}
-      <div className="navbar-right">
         <Show when="signed-in">
           <div className="navbar-avatar-wrapper">
             <UserButton afterSignOutUrl="/" />

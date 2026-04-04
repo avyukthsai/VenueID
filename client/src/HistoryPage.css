@@ -30,19 +30,19 @@
 .loading {
   text-align: center;
   padding: 48px 20px;
-  color: #999;
+  color: rgba(255, 255, 255, 0.58);
   font-size: 1.1em;
 }
 
 .error-message {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: #991b1b;
-  border: 1px solid #fca5a5;
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
   padding: 16px 20px;
   border-radius: 10px;
   font-weight: 600;
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
 }
 
 /* --- Empty State --- */
@@ -57,7 +57,7 @@
 
 .empty-message {
   font-size: 1.3em;
-  color: #999;
+  color: rgba(255, 255, 255, 0.58);
   margin: 0 0 28px 0;
   font-weight: 400;
 }
@@ -70,21 +70,21 @@
 }
 
 .search-card {
-  background: white;
+  background: #141414;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .search-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 .search-card.expanded {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 /* --- Card Header --- */
@@ -98,7 +98,7 @@
 }
 
 .card-header:hover {
-  background-color: #fafafa;
+  background-color: rgba(255, 255, 255, 0.04);
 }
 
 .card-content {
@@ -126,30 +126,30 @@
 .event-type {
   font-size: 1.05em;
   font-weight: 600;
-  color: #333;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .location {
   font-size: 0.95em;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
 }
 
 .date {
   font-size: 0.9em;
-  color: #999;
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .top-venue {
   font-size: 0.9em;
-  color: #666;
+  color: rgba(255, 255, 255, 0.65);
   font-weight: 500;
   margin-top: 4px;
 }
 
 .timestamp {
   font-size: 0.85em;
-  color: #bbb;
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 400;
   white-space: nowrap;
   padding: 0 8px;
@@ -157,7 +157,7 @@
 
 .expand-icon {
   font-size: 0.9em;
-  color: #d1d5db;
+  color: rgba(255, 255, 255, 0.45);
   user-select: none;
   transition: transform 0.3s ease;
   display: flex;
@@ -172,7 +172,7 @@
   background: none;
   border: none;
   padding: 8px;
-  color: #d1d5db;
+  color: rgba(255, 255, 255, 0.48);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -182,8 +182,8 @@
 }
 
 .delete-button:hover:not(:disabled) {
-  color: #ef4444;
-  background-color: #fee2e2;
+  color: #f87171;
+  background-color: rgba(239, 68, 68, 0.12);
 }
 
 .delete-button:disabled {
@@ -194,8 +194,8 @@
 /* --- Card Details --- */
 .card-details {
   padding: 24px 20px;
-  border-top: 1px solid #f0f0f0;
-  background: #fafafa;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
   animation: slideDown 0.3s ease;
 }
 
