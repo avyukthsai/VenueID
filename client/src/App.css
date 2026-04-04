@@ -7,7 +7,7 @@
 html {
   margin: 0;
   padding: 0;
-  background: #0a0a0a;
+  background: #ffffff;
   scroll-behavior: smooth;
   overflow: hidden auto;
   scrollbar-width: thin;
@@ -42,7 +42,7 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: rgba(255, 255, 255, 0.85);
+  color: #374151;
   width: 100%;
   overflow-x: hidden;
 }
@@ -65,7 +65,7 @@ body {
    HERO — Full-width gradient background with layered depth
    ============================================================ */
 .hero-section {
-  padding: 160px 20px 120px;
+  padding: 0px 20px 120px;
   position: relative;
   text-align: center;
   width: 100%;
@@ -73,7 +73,14 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #0a0a0a;
+  background: linear-gradient(
+    160deg,
+    #ecfdf5 0%,
+    #f0fdfa 25%,
+    #f0f9ff 50%,
+    #eff6ff 75%,
+    #f8fafc 100%
+  );
   overflow: hidden;
 }
 
@@ -87,7 +94,7 @@ body {
   height: 80%;
   background: radial-gradient(
     ellipse,
-    rgba(16, 185, 129, 0.18) 0%,
+    rgba(16, 185, 129, 0.1) 0%,
     transparent 70%
   );
   pointer-events: none;
@@ -103,7 +110,7 @@ body {
   height: 70%;
   background: radial-gradient(
     ellipse,
-    rgba(14, 165, 233, 0.13) 0%,
+    rgba(14, 165, 233, 0.08) 0%,
     transparent 70%
   );
   pointer-events: none;
@@ -149,7 +156,7 @@ body {
   font-family: "Playfair Display", serif;
   font-size: clamp(3.6em, 8.5vw, 7.2em);
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   line-height: 0.97;
   letter-spacing: -3px;
   margin: 0 0 32px 0;
@@ -170,7 +177,7 @@ body {
 .hero-subtitle {
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.25em;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   max-width: 500px;
   margin: 0 auto 0;
   line-height: 1.8;
@@ -223,7 +230,7 @@ body {
 
 .hero-cta-secondary {
   background-color: transparent;
-  color: rgba(255, 255, 255, 0.68);
+  color: #6b7280;
   border: none;
   border-radius: 8px;
   padding: 18px 44px;
@@ -238,7 +245,79 @@ body {
 
 .hero-cta-secondary:hover {
   text-decoration: underline;
-  color: rgba(255, 255, 255, 0.8);
+  color: #374151;
+}
+
+/* ============================================================
+   Hero Stage Graphic — decorative wave + venue disc
+   ============================================================ */
+
+/* Button floating centered in the wave */
+.hero-wave-cta {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .hero-wave-cta {
+    bottom: 76px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-wave-cta {
+    bottom: 56px;
+  }
+}
+
+.hero-stage-graphic {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 280px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-stage-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes stageBreath {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateY(5px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-stage-graphic {
+    animation: stageBreath 8s ease-in-out infinite;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-stage-graphic {
+    height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-stage-graphic {
+    height: 160px;
+  }
 }
 
 /* ============================================================
@@ -249,7 +328,7 @@ body {
   position: relative;
   z-index: 1;
   overflow: hidden;
-  /* No solid background — carousel shows through */
+  background: #1e293b;
 }
 
 .App-header {
@@ -330,6 +409,21 @@ body {
   color: white;
 }
 
+.content-area .state-select {
+  color: #ffffff;
+  border-bottom-color: rgba(255, 255, 255, 0.25);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.5)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.content-area .state-select option {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+.content-area .state-select:focus {
+  border-bottom-color: #34d399;
+}
+
 .content-area .additional-requirements-input {
   color: #ffffff;
   border-bottom-color: rgba(255, 255, 255, 0.25);
@@ -359,17 +453,16 @@ body {
   color: #fca5a5;
 }
 
-/* --- Frosted glass card around the form --- */
+/* --- Solid dark card around the form --- */
 .glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
   padding: 48px;
   max-width: 800px;
   width: 100%;
   margin: 0 auto;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
 }
 
 /* --- Form Title --- */
@@ -460,33 +553,33 @@ body {
   width: 100%;
   padding: 12px 16px;
   border: none;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 2px solid #e2e8f0;
   border-radius: 0;
   background: transparent;
-  color: #ffffff;
+  color: #1e293b;
   font-size: 1em;
   font-family: inherit;
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.5)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(0,0,0,0.35)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 4px center;
 }
 
 .state-select:focus {
   outline: none;
-  border-bottom-color: #34d399;
+  border-bottom-color: #10b981;
 }
 
 .state-select option {
-  background: #1a1a1a;
-  color: #ffffff;
+  background: #ffffff;
+  color: #1e293b;
 }
 
 .state-select option[value=""] {
-  color: rgba(255, 255, 255, 0.45);
+  color: #94a3b8;
 }
 
 .input-label {
@@ -619,7 +712,7 @@ body {
 }
 
 .search-counter-normal {
-  color: rgba(255, 255, 255, 0.65);
+  color: #6b7280;
 }
 
 .search-counter-warning {
@@ -632,11 +725,11 @@ body {
 }
 
 .search-counter-signout {
-  color: rgba(255, 255, 255, 0.65);
+  color: #6b7280;
 }
 
 .search-counter-loading {
-  color: rgba(255, 255, 255, 0.5);
+  color: #9ca3af;
   font-style: italic;
 }
 
@@ -644,8 +737,8 @@ body {
    Limit Reached / Waitlist
    ============================================================ */
 .limit-reached-container {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   border-radius: 12px;
   padding: 24px;
   margin: 20px 0;
@@ -658,13 +751,13 @@ body {
 }
 
 .limit-reached-message h3 {
-  color: #fca5a5;
+  color: #991b1b;
   font-size: 1.3em;
   margin: 0 0 12px 0;
 }
 
 .limit-reached-message p {
-  color: rgba(252, 165, 165, 0.75);
+  color: #b91c1c;
   margin: 0 0 20px 0;
   line-height: 1.6;
 }
@@ -680,10 +773,10 @@ body {
   flex: 1;
   min-width: 200px;
   padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.85);
+  background-color: #ffffff;
+  color: #374151;
   font-size: 0.95em;
   font-family: inherit;
   transition: all 0.2s ease;
@@ -696,7 +789,7 @@ body {
 }
 
 .waitlist-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: #9ca3af;
 }
 
 .waitlist-button {
@@ -726,14 +819,14 @@ body {
    Error Message
    ============================================================ */
 .error-message {
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
   padding: 16px 20px;
   border-radius: 10px;
   font-weight: 600;
   margin: 20px 0;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.06);
   width: 100%;
   max-width: 800px;
 }
@@ -766,9 +859,9 @@ body {
 .save-section {
   margin-top: 32px;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.04);
+  background: #f8fafc;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid #e5e7eb;
   display: flex;
   gap: 16px;
   justify-content: center;
@@ -847,7 +940,7 @@ body {
 }
 
 .sign-in-message {
-  color: rgba(255, 255, 255, 0.65);
+  color: #6b7280;
   font-weight: 600;
   margin: 0;
   font-size: 0.95em;
@@ -1258,34 +1351,44 @@ body {
 }
 
 @keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .contact-modal {
-  background: #141414;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   padding: 52px;
   max-width: 580px;
   width: 100%;
   position: relative;
   box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.6),
-    0 8px 24px rgba(0, 0, 0, 0.4);
+    0 32px 80px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.06);
   animation: modalSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(32px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .contact-modal-close {
   position: absolute;
   top: 18px;
   right: 18px;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.05);
   border: none;
   border-radius: 50%;
   width: 36px;
@@ -1296,27 +1399,27 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(0, 0, 0, 0.4);
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
 .contact-modal-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: rgba(0, 0, 0, 0.09);
+  color: #0f172a;
 }
 
 .contact-modal-header h2 {
   font-family: "Playfair Display", serif;
   font-size: 2em;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0 0 8px 0;
   letter-spacing: -0.5px;
 }
 
 .contact-modal-header p {
-  color: rgba(255, 255, 255, 0.65);
+  color: #6b7280;
   margin: 0 0 36px 0;
   font-size: 1em;
   line-height: 1.6;
@@ -1343,7 +1446,7 @@ body {
 .contact-form-field label {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.62);
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.09em;
 }
@@ -1351,12 +1454,12 @@ body {
 .contact-form-field input,
 .contact-form-field textarea {
   padding: 12px 16px;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border: 1.5px solid #e5e7eb;
   border-radius: 10px;
   font-family: inherit;
   font-size: 0.95em;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.06);
+  color: #0f172a;
+  background: #f9fafb;
   transition: all 0.2s ease;
   resize: vertical;
 }
@@ -1365,13 +1468,13 @@ body {
 .contact-form-field textarea:focus {
   outline: none;
   border-color: #10b981;
-  background: rgba(255, 255, 255, 0.08);
+  background: #ffffff;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
 .contact-form-field input::placeholder,
 .contact-form-field textarea::placeholder {
-  color: rgba(255, 255, 255, 0.45);
+  color: #9ca3af;
 }
 
 .contact-form-submit {
@@ -1422,12 +1525,12 @@ body {
 .contact-modal-success h2 {
   font-family: "Playfair Display", serif;
   font-size: 1.8em;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0 0 10px 0;
 }
 
 .contact-modal-success p {
-  color: rgba(255, 255, 255, 0.65);
+  color: #6b7280;
   margin: 0;
   font-size: 1em;
 }
@@ -1447,7 +1550,7 @@ body {
    Features Section — bold asymmetric bento (Linear/Stripe style)
    ============================================================ */
 .features-section {
-  background: #09090b;
+  background: #f8fafc;
   padding: 120px 40px 140px;
   position: relative;
   overflow: hidden;
@@ -1501,9 +1604,9 @@ body {
   font-family: "Playfair Display", serif;
   font-size: clamp(2.8em, 5vw, 4.8em);
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0;
-  line-height: 1.0;
+  line-height: 1;
   letter-spacing: -2px;
 }
 
@@ -1524,8 +1627,8 @@ body {
 
 /* Base card */
 .feature-card {
-  background: #111111;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 32px;
   display: flex;
@@ -1533,12 +1636,14 @@ body {
   justify-content: space-between;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.3s ease, background 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
 }
 
 .feature-card:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: #161616;
+  border-color: #d1d5db;
+  background: #f9fafb;
 }
 
 /*
@@ -1577,7 +1682,11 @@ body {
   width: 260px;
   height: 260px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 65%);
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.12) 0%,
+    transparent 65%
+  );
   pointer-events: none;
 }
 
@@ -1589,7 +1698,7 @@ body {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.18);
+  color: rgba(0, 0, 0, 0.18);
   font-family: "Plus Jakarta Sans", monospace;
 }
 
@@ -1603,7 +1712,7 @@ body {
 .feature-card h3 {
   font-size: 1.15em;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0;
   line-height: 1.2;
   letter-spacing: -0.3px;
@@ -1618,7 +1727,7 @@ body {
 
 .feature-card p {
   font-size: 0.855em;
-  color: rgba(255, 255, 255, 0.62);
+  color: #6b7280;
   line-height: 1.7;
   margin: 0;
 }
@@ -1826,14 +1935,14 @@ body {
 }
 
 /* ============================================================
-   Clerk dark theme — hover / focus / active overrides
+   Clerk light theme — hover / focus / active overrides
    These can't be expressed in the JS appearance object.
    ============================================================ */
 
 /* Social button hover */
 .cl-socialButtonsBlockButton:hover {
-  background: rgba(255, 255, 255, 0.09) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.16) !important;
 }
 
 /* Form input focus */
@@ -1841,7 +1950,7 @@ body {
   border-color: #10b981 !important;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14) !important;
   outline: none !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: #ffffff !important;
 }
 
 /* Primary button hover */
@@ -1853,36 +1962,36 @@ body {
 
 /* Footer link hover */
 .cl-footerActionLink:hover {
-  color: #34d399 !important;
+  color: #059669 !important;
 }
 
 /* Alternative methods hover */
 .cl-alternativeMethodsBlockButton:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.14) !important;
 }
 
 /* Popover action button hover */
 .cl-userButtonPopoverActionButton:hover {
-  background: rgba(255, 255, 255, 0.07) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
 }
 
 /* Navbar button hover + active */
 .cl-navbarButton:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #ffffff !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #0f172a !important;
 }
 
 .cl-navbarButton[aria-current],
 .cl-navbarButton[data-active="true"],
 .cl-active .cl-navbarButton {
-  background: rgba(16, 185, 129, 0.12) !important;
+  background: rgba(16, 185, 129, 0.1) !important;
   color: #10b981 !important;
 }
 
 /* Profile section primary button hover */
 .cl-profileSectionPrimaryButton:hover {
-  background: rgba(16, 185, 129, 0.14) !important;
+  background: rgba(16, 185, 129, 0.12) !important;
   border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
@@ -1894,7 +2003,7 @@ body {
 
 /* Accordion hover */
 .cl-accordionTriggerButton:hover {
-  color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 /* Hide Clerk branding everywhere */

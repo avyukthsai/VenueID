@@ -116,12 +116,12 @@
   justify-content: center;
 }
 
-/* "Log in" — dark glass pill */
+/* "Log in" — light glass pill */
 .navbar-auth-btn {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #374151;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   padding: 9px 22px;
   border-radius: 50px;
   font-weight: 600;
@@ -129,28 +129,28 @@
   font-family: "Plus Jakarta Sans", sans-serif;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
 }
 
 .navbar-auth-btn:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.18);
   transform: translateY(-1px);
 }
 
-/* "Sign up" — white fill, dark text */
+/* "Sign up" — dark fill, white text */
 .navbar-auth-btn-primary {
-  background: #ffffff;
-  color: #0a0a0a;
+  background: #111827;
+  color: #ffffff;
   border-color: transparent;
-  box-shadow: 0 2px 12px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .navbar-auth-btn-primary:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: #1f2937;
   border-color: transparent;
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* --- Clerk UserButton trigger --- */

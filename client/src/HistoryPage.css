@@ -5,6 +5,7 @@
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+  background: #f8fafc;
 }
 
 .history-page {
@@ -30,19 +31,19 @@
 .loading {
   text-align: center;
   padding: 48px 20px;
-  color: rgba(255, 255, 255, 0.58);
+  color: #9ca3af;
   font-size: 1.1em;
 }
 
 .error-message {
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
   padding: 16px 20px;
   border-radius: 10px;
   font-weight: 600;
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.06);
 }
 
 /* --- Empty State --- */
@@ -57,7 +58,7 @@
 
 .empty-message {
   font-size: 1.3em;
-  color: rgba(255, 255, 255, 0.58);
+  color: #9ca3af;
   margin: 0 0 28px 0;
   font-weight: 400;
 }
@@ -70,21 +71,21 @@
 }
 
 .search-card {
-  background: #141414;
+  background: #ffffff;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .search-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  border-color: #d1d5db;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
 }
 
 .search-card.expanded {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 /* --- Card Header --- */
@@ -98,7 +99,7 @@
 }
 
 .card-header:hover {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: #fafafa;
 }
 
 .card-content {
@@ -126,30 +127,30 @@
 .event-type {
   font-size: 1.05em;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: #111827;
 }
 
 .location {
   font-size: 0.95em;
-  color: rgba(255, 255, 255, 0.7);
+  color: #6b7280;
   font-weight: 500;
 }
 
 .date {
   font-size: 0.9em;
-  color: rgba(255, 255, 255, 0.58);
+  color: #9ca3af;
 }
 
 .top-venue {
   font-size: 0.9em;
-  color: rgba(255, 255, 255, 0.65);
+  color: #6b7280;
   font-weight: 500;
   margin-top: 4px;
 }
 
 .timestamp {
   font-size: 0.85em;
-  color: rgba(255, 255, 255, 0.5);
+  color: #9ca3af;
   font-weight: 400;
   white-space: nowrap;
   padding: 0 8px;
@@ -157,7 +158,7 @@
 
 .expand-icon {
   font-size: 0.9em;
-  color: rgba(255, 255, 255, 0.45);
+  color: #9ca3af;
   user-select: none;
   transition: transform 0.3s ease;
   display: flex;
@@ -172,7 +173,7 @@
   background: none;
   border: none;
   padding: 8px;
-  color: rgba(255, 255, 255, 0.48);
+  color: #d1d5db;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -194,8 +195,8 @@
 /* --- Card Details --- */
 .card-details {
   padding: 24px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
   animation: slideDown 0.3s ease;
 }
 

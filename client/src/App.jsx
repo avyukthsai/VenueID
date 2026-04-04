@@ -366,19 +366,19 @@ function App() {
             <path
               d="M0,150 Q360,100 720,150 T1440,150"
               fill="none"
-              stroke="rgba(255,255,255,0.04)"
+              stroke="rgba(0,0,0,0.036)"
               strokeWidth="2"
             />
             <path
               d="M0,220 Q360,180 720,220 T1440,220"
               fill="none"
-              stroke="rgba(255,255,255,0.04)"
+              stroke="rgba(0,0,0,0.036)"
               strokeWidth="2"
             />
             <path
               d="M0,280 Q360,250 720,280 T1440,280"
               fill="none"
-              stroke="rgba(255,255,255,0.04)"
+              stroke="rgba(0,0,0,0.036)"
               strokeWidth="2"
             />
           </svg>
@@ -392,34 +392,263 @@ function App() {
             AI-powered recommendations grounded in real venue data across
             thousands of locations.
           </p>
-          <div className="hero-cta-buttons">
-            <button
-              className="hero-cta-primary"
-              onClick={() => {
-                const eventTypeSection = document.getElementById("event-type");
-                const navbar = document.querySelector(".auth-header");
-                if (!eventTypeSection) return;
-                const navbarHeight =
-                  navbar instanceof HTMLElement ? navbar.offsetHeight : 0;
-                const targetTop =
-                  window.scrollY +
-                  eventTypeSection.getBoundingClientRect().top -
-                  navbarHeight -
-                  12;
-                window.scrollTo({
-                  top: Math.max(targetTop, 0),
-                  behavior: "smooth",
-                });
-              }}
-            >
-              Find Your Venue
-            </button>
-          </div>
+        </div>
+
+        {/* CTA button — floats in the wave */}
+        <div className="hero-wave-cta">
+          <button
+            className="hero-cta-primary"
+            onClick={() => {
+              const eventTypeSection = document.getElementById("event-type");
+              const navbar = document.querySelector(".auth-header");
+              if (!eventTypeSection) return;
+              const navbarHeight =
+                navbar instanceof HTMLElement ? navbar.offsetHeight : 0;
+              const targetTop =
+                window.scrollY +
+                eventTypeSection.getBoundingClientRect().top -
+                navbarHeight -
+                12;
+              window.scrollTo({
+                top: Math.max(targetTop, 0),
+                behavior: "smooth",
+              });
+            }}
+          >
+            Find Your Venue
+          </button>
+        </div>
+
+        {/* Stage graphic */}
+        <div className="hero-stage-graphic" aria-hidden="true">
+          <svg
+            viewBox="0 0 1440 280"
+            xmlns="http://www.w3.org/2000/svg"
+            className="hero-stage-svg"
+            preserveAspectRatio="xMidYMax meet"
+          >
+            <defs>
+              <radialGradient
+                id="sg-ambient"
+                cx="720"
+                cy="120"
+                r="520"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#10b981" stopOpacity="0.22" />
+                <stop offset="45%" stopColor="#0ea5e9" stopOpacity="0.08" />
+                <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient
+                id="sg-left"
+                cx="260"
+                cy="240"
+                r="280"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient
+                id="sg-right"
+                cx="1180"
+                cy="240"
+                r="280"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient
+                id="sg-disc"
+                cx="720"
+                cy="100"
+                r="110"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#10b981" stopOpacity="0.55" />
+                <stop offset="60%" stopColor="#10b981" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id="sg-arch" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+                <stop offset="28%" stopColor="#10b981" stopOpacity="0.75" />
+                <stop offset="72%" stopColor="#0ea5e9" stopOpacity="0.75" />
+                <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
+              </linearGradient>
+              <filter id="sg-glow" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="14" />
+              </filter>
+              <filter
+                id="sg-glow-sm"
+                x="-100%"
+                y="-100%"
+                width="300%"
+                height="300%"
+              >
+                <feGaussianBlur stdDeviation="5" />
+              </filter>
+            </defs>
+
+            {/* Ambient glow clouds */}
+            <ellipse
+              cx="720"
+              cy="150"
+              rx="680"
+              ry="200"
+              fill="url(#sg-ambient)"
+            />
+            <ellipse cx="400" cy="220" rx="280" ry="140" fill="url(#sg-left)" />
+            <ellipse
+              cx="1040"
+              cy="220"
+              rx="280"
+              ry="140"
+              fill="url(#sg-right)"
+            />
+
+            {/* Dark hill base — sides go full width to bottom corners */}
+            <path
+              d="M0,280 C280,280 480,82 720,82 C960,82 1160,280 1440,280 Z"
+              fill="#1e293b"
+            />
+
+            {/* Stadium seating arcs — dashed curves above the hill */}
+            <path
+              d="M440,195 Q720,18 1000,195"
+              fill="none"
+              stroke="url(#sg-arch)"
+              strokeWidth="1"
+              strokeDasharray="5,11"
+              opacity="0.55"
+            />
+            <path
+              d="M520,185 Q720,48 920,185"
+              fill="none"
+              stroke="url(#sg-arch)"
+              strokeWidth="1.5"
+              opacity="0.38"
+            />
+
+            {/* Cardinal tick marks */}
+            <line
+              x1="720"
+              y1="36"
+              x2="720"
+              y2="50"
+              stroke="rgba(16,185,129,0.45)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <line
+              x1="784"
+              y1="100"
+              x2="770"
+              y2="100"
+              stroke="rgba(14,165,233,0.35)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <line
+              x1="656"
+              y1="100"
+              x2="670"
+              y2="100"
+              stroke="rgba(14,165,233,0.35)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <line
+              x1="762"
+              y1="62"
+              x2="752"
+              y2="73"
+              stroke="rgba(16,185,129,0.3)"
+              strokeWidth="1"
+              strokeLinecap="round"
+            />
+            <line
+              x1="678"
+              y1="62"
+              x2="688"
+              y2="73"
+              stroke="rgba(16,185,129,0.3)"
+              strokeWidth="1"
+              strokeLinecap="round"
+            />
+
+            {/* Left accent orb — raised up the slope */}
+            <circle
+              cx="460"
+              cy="178"
+              r="22"
+              fill="none"
+              stroke="rgba(14,165,233,0.38)"
+              strokeWidth="1.5"
+            />
+            <circle
+              cx="460"
+              cy="178"
+              r="7"
+              fill="rgba(14,165,233,0.5)"
+              filter="url(#sg-glow-sm)"
+            />
+            <circle cx="460" cy="178" r="3.5" fill="#0ea5e9" />
+
+            {/* Right accent orb — raised up the slope */}
+            <circle
+              cx="980"
+              cy="178"
+              r="22"
+              fill="none"
+              stroke="rgba(99,102,241,0.38)"
+              strokeWidth="1.5"
+            />
+            <circle
+              cx="980"
+              cy="178"
+              r="7"
+              fill="rgba(99,102,241,0.5)"
+              filter="url(#sg-glow-sm)"
+            />
+            <circle cx="980" cy="178" r="4" fill="#6366f1" />
+
+            {/* Dashed connectors from side orbs to center */}
+            <line
+              x1="481"
+              y1="170"
+              x2="665"
+              y2="115"
+              stroke="rgba(14,165,233,0.12)"
+              strokeWidth="1"
+              strokeDasharray="4,9"
+            />
+            <line
+              x1="959"
+              y1="170"
+              x2="778"
+              y2="115"
+              stroke="rgba(99,102,241,0.12)"
+              strokeWidth="1"
+              strokeDasharray="4,9"
+            />
+
+            {/* Floating particles */}
+            <circle cx="634" cy="64" r="2.5" fill="#10b981" opacity="0.7" />
+            <circle cx="806" cy="57" r="2" fill="#0ea5e9" opacity="0.65" />
+            <circle cx="672" cy="38" r="1.5" fill="#6366f1" opacity="0.5" />
+            <circle cx="768" cy="42" r="2" fill="#10b981" opacity="0.55" />
+            <circle cx="720" cy="26" r="1.5" fill="#0ea5e9" opacity="0.45" />
+            <circle cx="695" cy="52" r="1" fill="#10b981" opacity="0.5" />
+            <circle cx="745" cy="48" r="1.5" fill="#6366f1" opacity="0.45" />
+            <circle cx="580" cy="88" r="1.5" fill="#0ea5e9" opacity="0.4" />
+            <circle cx="860" cy="82" r="1.5" fill="#6366f1" opacity="0.4" />
+          </svg>
         </div>
       </div>
 
       <div className="content-area" id="search">
-        <BackgroundCarousel />
+        <BackgroundCarousel venueType={venueType} />
         <div className="App-header">
           <div className="main-content-wrapper">
             <div className="glass-card">

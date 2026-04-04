@@ -10,16 +10,16 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 const clerkAppearance = {
   variables: {
     colorPrimary: "#10b981",
-    colorBackground: "#111111",
-    colorInputBackground: "#1c1c1c",
-    colorInputText: "#ffffff",
-    colorText: "#ffffff",
-    colorTextSecondary: "rgba(255, 255, 255, 0.58)",
+    colorBackground: "#ffffff",
+    colorInputBackground: "#f9fafb",
+    colorInputText: "#0f172a",
+    colorText: "#0f172a",
+    colorTextSecondary: "#6b7280",
     colorTextOnPrimaryBackground: "#ffffff",
-    colorNeutral: "#888888",
-    colorShimmer: "rgba(255, 255, 255, 0.03)",
-    colorDanger: "#f87171",
-    colorSuccess: "#34d399",
+    colorNeutral: "#6b7280",
+    colorShimmer: "rgba(0, 0, 0, 0.04)",
+    colorDanger: "#ef4444",
+    colorSuccess: "#10b981",
     borderRadius: "10px",
     fontFamily: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontSize: "0.94rem",
@@ -28,84 +28,84 @@ const clerkAppearance = {
   elements: {
     // ── Card / Modal shell ──────────────────────────────────────
     card: {
-      background: "#141414",
-      border: "1px solid rgba(255, 255, 255, 0.09)",
-      boxShadow: "0 32px 80px rgba(0, 0, 0, 0.7), 0 8px 24px rgba(0, 0, 0, 0.4)",
+      background: "#ffffff",
+      border: "1px solid rgba(0, 0, 0, 0.08)",
+      boxShadow: "0 24px 60px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.05)",
       borderRadius: "18px",
     },
     modalBackdrop: {
-      background: "rgba(0, 0, 0, 0.65)",
+      background: "rgba(0, 0, 0, 0.4)",
       backdropFilter: "blur(6px)",
     },
 
     // ── Header ─────────────────────────────────────────────────
     headerTitle: {
-      color: "#ffffff",
+      color: "#0f172a",
       fontWeight: "700",
       letterSpacing: "-0.3px",
       fontFamily: '"Playfair Display", serif',
     },
     headerSubtitle: {
-      color: "rgba(255, 255, 255, 0.52)",
+      color: "#6b7280",
     },
 
     // ── Divider ────────────────────────────────────────────────
     dividerLine: {
-      background: "rgba(255, 255, 255, 0.08)",
+      background: "#e5e7eb",
     },
     dividerText: {
-      color: "rgba(255, 255, 255, 0.32)",
-      background: "#141414",
+      color: "#9ca3af",
+      background: "#ffffff",
     },
 
     // ── Social / OAuth buttons ──────────────────────────────────
     socialButtonsBlockButton: {
-      background: "rgba(255, 255, 255, 0.05)",
-      border: "1px solid rgba(255, 255, 255, 0.11)",
+      background: "#f9fafb",
+      border: "1px solid #e5e7eb",
       borderRadius: "10px",
-      color: "#ffffff",
+      color: "#374151",
       transition: "all 0.2s ease",
     },
     socialButtonsBlockButtonText: {
-      color: "rgba(255, 255, 255, 0.82)",
+      color: "#374151",
       fontWeight: "600",
     },
     socialButtonsBlockButtonArrow: {
-      color: "rgba(255, 255, 255, 0.35)",
+      color: "#9ca3af",
     },
     socialButtonsProviderIcon: {
-      filter: "brightness(0.9)",
+      filter: "none",
     },
 
     // ── Form fields ────────────────────────────────────────────
     formFieldLabel: {
-      color: "rgba(255, 255, 255, 0.62)",
+      color: "#6b7280",
       fontSize: "0.78rem",
       fontWeight: "600",
       textTransform: "uppercase",
       letterSpacing: "0.08em",
     },
     formFieldInput: {
-      background: "rgba(255, 255, 255, 0.06)",
-      border: "1.5px solid rgba(255, 255, 255, 0.11)",
+      background: "#f9fafb",
+      border: "1.5px solid #e5e7eb",
       borderRadius: "10px",
-      color: "#ffffff",
+      color: "#0f172a",
       transition: "all 0.2s ease",
     },
     formFieldInputShowPasswordButton: {
-      color: "rgba(255, 255, 255, 0.45)",
+      color: "#9ca3af",
     },
     formFieldSuccessText: {
-      color: "#34d399",
+      color: "#059669",
     },
     formFieldErrorText: {
-      color: "#f87171",
+      color: "#ef4444",
     },
     formFieldWarningText: {
-      color: "#fbbf24",
+      color: "#f59e0b",
     },
     formFieldHintText: {
-      color: "rgba(255, 255, 255, 0.4)",
+      color: "#9ca3af",
     },
 
     // ── Primary action button ──────────────────────────────────
@@ -120,17 +120,17 @@ const clerkAppearance = {
       transition: "all 0.2s ease",
     },
     formButtonReset: {
-      color: "rgba(255, 255, 255, 0.55)",
+      color: "#6b7280",
       fontWeight: "500",
     },
 
     // ── Footer / links ─────────────────────────────────────────
     footer: {
       background: "transparent",
-      borderTop: "1px solid rgba(255, 255, 255, 0.07)",
+      borderTop: "1px solid #f0f0f0",
     },
     footerActionText: {
-      color: "rgba(255, 255, 255, 0.42)",
+      color: "#9ca3af",
     },
     footerActionLink: {
       color: "#10b981",
@@ -147,14 +147,14 @@ const clerkAppearance = {
       fontWeight: "600",
     },
     alternativeMethodsBlockButton: {
-      background: "rgba(255, 255, 255, 0.04)",
-      border: "1px solid rgba(255, 255, 255, 0.1)",
+      background: "#f9fafb",
+      border: "1px solid #e5e7eb",
       borderRadius: "10px",
-      color: "rgba(255, 255, 255, 0.75)",
+      color: "#374151",
       transition: "all 0.2s ease",
     },
     alternativeMethodsBlockButtonText: {
-      color: "rgba(255, 255, 255, 0.75)",
+      color: "#374151",
       fontWeight: "500",
     },
 
@@ -163,10 +163,10 @@ const clerkAppearance = {
       gap: "10px",
     },
     otpCodeFieldInput: {
-      background: "rgba(255, 255, 255, 0.06)",
-      border: "1.5px solid rgba(255, 255, 255, 0.12)",
+      background: "#f9fafb",
+      border: "1.5px solid #e5e7eb",
       borderRadius: "10px",
-      color: "#ffffff",
+      color: "#0f172a",
       fontWeight: "700",
       fontSize: "1.2em",
     },
@@ -188,10 +188,10 @@ const clerkAppearance = {
 
     // ── UserButton popover ─────────────────────────────────────
     userButtonPopoverCard: {
-      background: "#141414",
-      border: "1px solid rgba(255, 255, 255, 0.09)",
+      background: "#ffffff",
+      border: "1px solid rgba(0, 0, 0, 0.08)",
       borderRadius: "14px",
-      boxShadow: "0 24px 60px rgba(0, 0, 0, 0.65), 0 8px 20px rgba(0, 0, 0, 0.4)",
+      boxShadow: "0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06)",
     },
     userButtonPopoverActions: {
       background: "transparent",
@@ -201,10 +201,10 @@ const clerkAppearance = {
       transition: "all 0.15s ease",
     },
     userButtonPopoverActionButtonIcon: {
-      color: "rgba(255, 255, 255, 0.48)",
+      color: "#9ca3af",
     },
     userButtonPopoverActionButtonText: {
-      color: "rgba(255, 255, 255, 0.82)",
+      color: "#374151",
       fontWeight: "500",
     },
     userButtonPopoverFooter: {
@@ -214,27 +214,27 @@ const clerkAppearance = {
       background: "transparent",
     },
     userPreviewMainIdentifier: {
-      color: "#ffffff",
+      color: "#0f172a",
       fontWeight: "600",
     },
     userPreviewSecondaryIdentifier: {
-      color: "rgba(255, 255, 255, 0.45)",
+      color: "#6b7280",
       fontSize: "0.82em",
     },
 
     // ── UserProfile (Manage Account full page) ─────────────────
     profilePage: {
-      background: "#111111",
+      background: "#f8fafc",
     },
     pageScrollBox: {
-      background: "#111111",
+      background: "#f8fafc",
     },
     navbar: {
-      background: "#0d0d0d",
-      borderRight: "1px solid rgba(255, 255, 255, 0.07)",
+      background: "#ffffff",
+      borderRight: "1px solid #e5e7eb",
     },
     navbarButton: {
-      color: "rgba(255, 255, 255, 0.6)",
+      color: "#6b7280",
       borderRadius: "8px",
       fontWeight: "500",
       transition: "all 0.18s ease",
@@ -244,20 +244,20 @@ const clerkAppearance = {
       opacity: 0.8,
     },
     profileSection: {
-      borderTop: "1px solid rgba(255, 255, 255, 0.07)",
+      borderTop: "1px solid #f0f0f0",
     },
     profileSectionTitle: {
-      borderBottom: "1px solid rgba(255, 255, 255, 0.07)",
+      borderBottom: "1px solid #f0f0f0",
     },
     profileSectionTitleText: {
-      color: "rgba(255, 255, 255, 0.88)",
+      color: "#374151",
       fontWeight: "600",
       fontSize: "0.82em",
       textTransform: "uppercase",
       letterSpacing: "0.09em",
     },
     profileSectionContent: {
-      color: "rgba(255, 255, 255, 0.7)",
+      color: "#6b7280",
     },
     profileSectionPrimaryButton: {
       color: "#10b981",
@@ -268,36 +268,36 @@ const clerkAppearance = {
       transition: "all 0.18s ease",
     },
     profileSectionItemValue: {
-      color: "rgba(255, 255, 255, 0.72)",
+      color: "#374151",
     },
     badge: {
-      background: "rgba(16, 185, 129, 0.12)",
-      color: "#34d399",
-      border: "1px solid rgba(16, 185, 129, 0.25)",
+      background: "rgba(16, 185, 129, 0.1)",
+      color: "#059669",
+      border: "1px solid rgba(16, 185, 129, 0.2)",
       borderRadius: "6px",
       fontWeight: "600",
     },
     breadcrumbs: {
-      color: "rgba(255, 255, 255, 0.38)",
+      color: "#9ca3af",
     },
     breadcrumbsItem__currentPage: {
-      color: "rgba(255, 255, 255, 0.88)",
+      color: "#0f172a",
     },
     breadcrumbsItemDivider: {
-      color: "rgba(255, 255, 255, 0.22)",
+      color: "#d1d5db",
     },
     activeDeviceListItem: {
-      border: "1px solid rgba(255, 255, 255, 0.08)",
+      border: "1px solid #e5e7eb",
       borderRadius: "10px",
-      background: "rgba(255, 255, 255, 0.03)",
+      background: "#f9fafb",
     },
     accordionTriggerButton: {
-      color: "rgba(255, 255, 255, 0.68)",
+      color: "#6b7280",
     },
     destructiveActionButton: {
-      color: "#f87171",
-      borderColor: "rgba(248, 113, 113, 0.25)",
-      background: "rgba(248, 113, 113, 0.07)",
+      color: "#dc2626",
+      borderColor: "rgba(220, 38, 38, 0.2)",
+      background: "rgba(220, 38, 38, 0.05)",
       borderRadius: "8px",
     },
   },
