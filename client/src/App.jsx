@@ -744,7 +744,8 @@ function App() {
           <div className="features-header">
             <p className="features-eyebrow">Why Venue ID</p>
             <h2 className="features-heading">
-              The smarter way<br />
+              The smarter way
+              <br />
               to find your{" "}
               <span className="features-heading-accent">venue.</span>
             </h2>
@@ -755,8 +756,15 @@ function App() {
               <div className="feature-card-glow" />
               <span className="feature-num">01</span>
               <div className="feature-card-body">
-                <h3>Real Venue<br />Data</h3>
-                <p>Grounded in live data from Foursquare and Ticketmaster. No hallucinations, no placeholders — only real venues.</p>
+                <h3>
+                  Real Venue
+                  <br />
+                  Data
+                </h3>
+                <p>
+                  Grounded in live data from Foursquare and Ticketmaster. No
+                  hallucinations, no placeholders — only real venues.
+                </p>
               </div>
             </div>
 
@@ -764,7 +772,10 @@ function App() {
               <span className="feature-num">02</span>
               <div className="feature-card-body">
                 <h3>AI‑Powered Matching</h3>
-                <p>Gemini scores every venue on capacity, event type, location, and features.</p>
+                <p>
+                  We score every venue on capacity, event type, location, and
+                  features.
+                </p>
               </div>
             </div>
 
@@ -772,7 +783,10 @@ function App() {
               <span className="feature-num">03</span>
               <div className="feature-card-body">
                 <h3>Instant Results</h3>
-                <p>Three curated picks in seconds. Save to history and revisit any time.</p>
+                <p>
+                  Three curated picks in seconds. Save to history and revisit
+                  any time.
+                </p>
               </div>
             </div>
 
@@ -780,7 +794,10 @@ function App() {
               <span className="feature-num">04</span>
               <div className="feature-card-body">
                 <h3>Share with Anyone</h3>
-                <p>One-click shareable links. Send your venue picks to clients or collaborators instantly.</p>
+                <p>
+                  One-click shareable links. Send your venue picks to clients or
+                  collaborators instantly.
+                </p>
               </div>
             </div>
           </div>
