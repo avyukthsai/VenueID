@@ -363,6 +363,7 @@ body {
 .content-area .column input[type="date"] {
   color: #ffffff;
   border-bottom-color: rgba(255, 255, 255, 0.25);
+  color-scheme: dark;
 }
 
 .content-area .column input[type="text"]::placeholder,

@@ -99,7 +99,8 @@ function Navbar({ onOpenContact }) {
             /* Three-line hamburger */
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="hb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                {/* userSpaceOnUse required — objectBoundingBox fails on horizontal lines (height=0) */}
+                <linearGradient id="hb-grad" gradientUnits="userSpaceOnUse" x1="3" y1="0" x2="19" y2="22">
                   <stop offset="0%" stopColor="#10b981" />
                   <stop offset="100%" stopColor="#0ea5e9" />
                 </linearGradient>
