@@ -698,7 +698,7 @@ function App() {
                     <select
                       value={state}
                       onChange={(e) => setState(e.target.value)}
-                      className="state-select"
+                      className={`state-select${!state ? " state-select--empty" : ""}`}
                     >
                       <option value="">State</option>
                       <option value="AL">Alabama</option>
@@ -796,6 +796,7 @@ function App() {
                         id="event-date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
+                        className={!date ? "date-input--empty" : ""}
                       />
                       <span className="date-input-icon" aria-hidden="true">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

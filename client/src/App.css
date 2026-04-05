@@ -425,6 +425,14 @@ body {
   border-bottom-color: #34d399;
 }
 
+.content-area .state-select--empty {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.content-area .column input.date-input--empty {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .content-area .additional-requirements-input {
   color: #ffffff;
   border-bottom-color: rgba(255, 255, 255, 0.25);
