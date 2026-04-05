@@ -790,12 +790,21 @@ function App() {
                       gap: "24px",
                     }}
                   >
-                    <input
-                      type="date"
-                      id="event-date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                    />
+                    <div className="date-input-wrapper">
+                      <input
+                        type="date"
+                        id="event-date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                      />
+                      <span className="date-input-icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+                          <path d="M1 7h14" stroke="currentColor" strokeWidth="1.4"/>
+                          <path d="M5 1v3M11 1v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                        </svg>
+                      </span>
+                    </div>
                     <input
                       type="text"
                       id="event-time"

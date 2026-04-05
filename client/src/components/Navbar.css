@@ -180,37 +180,107 @@
   object-fit: cover !important;
 }
 
-/* --- Responsive --- */
-@media (max-width: 768px) {
-  .auth-header {
-    padding: 12px 20px;
-  }
-
-  .navbar-left {
-    gap: 16px;
-  }
-
-  .navbar-right {
-    gap: 8px;
-  }
-
-  .navbar-auth-btn {
-    padding: 8px 14px;
-    font-size: 13px;
-  }
-
-  .navbar-contact-btn {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
+/* --- Hamburger button (hidden on desktop) --- */
+.navbar-hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  pointer-events: auto;
 }
 
-@media (max-width: 480px) {
+/* --- Mobile dropdown --- */
+.navbar-mobile-menu {
+  display: none;
+}
+
+/* --- Responsive --- */
+@media (max-width: 767px) {
+  /* Strip all pill/glass styling from the bar itself */
   .auth-header {
-    padding: 10px 12px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 14px 20px;
+    /* Keep position: fixed from base style */
+    /* Allow the dropdown to overflow below */
+    overflow: visible;
+    flex-wrap: wrap;
+    align-items: flex-start;
   }
 
-  .navbar-saved-link {
-    display: none;
+  /* Hide all desktop-only items */
+  .navbar-desktop-only {
+    display: none !important;
+  }
+
+  /* Show hamburger */
+  .navbar-hamburger {
+    display: flex;
+  }
+
+  /* Full-width dropdown below the bar */
+  .navbar-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: #0f172a;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    /* Align to the full width of .auth-header which is position:fixed */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .navbar-mobile-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 16px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+  }
+
+  .navbar-mobile-item:last-child {
+    border-bottom: none;
+  }
+
+  .navbar-mobile-item:hover,
+  .navbar-mobile-item:active {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .navbar-mobile-avatar {
+    justify-content: space-between;
+  }
+
+  .navbar-mobile-label {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .navbar-mobile-signup {
+    color: #10b981;
   }
 }
