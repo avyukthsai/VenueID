@@ -25,8 +25,7 @@ function HistoryPage() {
         if (!response.ok) throw new Error("Failed to fetch searches");
         const data = await response.json();
         setSearches(data.data || []);
-      } catch (err) {
-        console.error("Error fetching searches:", err);
+      } catch {
         setError("Failed to load search history");
       } finally {
         setLoading(false);
@@ -47,8 +46,7 @@ function HistoryPage() {
 
       if (!response.ok) throw new Error("Failed to delete search");
       setSearches(searches.filter((s) => s.id !== searchId));
-    } catch (err) {
-      console.error("Error deleting search:", err);
+    } catch {
       setError("Failed to delete search");
     } finally {
       setDeleting(null);
@@ -150,7 +148,10 @@ function HistoryPage() {
                         {getRelativeTime(search.created_at)}
                       </div>
                     </div>
-                    <div className="expand-icon">
+                    <div
+                      className="expand-icon"
+                      aria-label={expandedId === search.id ? "Collapse" : "Expand"}
+                    >
                       {expandedId === search.id ? "▼" : "▶"}
                     </div>
                   </div>
@@ -181,7 +182,7 @@ function HistoryPage() {
                     <div className="venues-container">
                       {parseVenues(search.results).map((venue, i) => (
                         <VenueCard
-                          key={i}
+                          key={`venue-${i}-${venue.name || venue.venue}`}
                           venue={normalizeVenue(venue)}
                           variant="detail"
                         />

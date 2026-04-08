@@ -32,16 +32,7 @@ router.post("/", async (req, res) => {
       .select();
 
     if (error) {
-      console.error("Supabase insertion error details:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-      });
-      return res.status(500).json({
-        error: "Failed to create share link",
-        details: error.message,
-      });
+      return res.status(500).json({ error: "Failed to create share link" });
     }
 
     // Return the full share URL
@@ -52,8 +43,7 @@ router.post("/", async (req, res) => {
       token: token,
       shareUrl: shareUrl,
     });
-  } catch (error) {
-    console.error("Error creating share link:", error);
+  } catch {
     res.status(500).json({ error: "Failed to create share link" });
   }
 });
@@ -74,7 +64,6 @@ router.get("/:token", async (req, res) => {
       .single();
 
     if (error || !data) {
-      console.error("Supabase query error:", error);
       return res.status(404).json({ error: "Share link not found" });
     }
 
@@ -89,8 +78,7 @@ router.get("/:token", async (req, res) => {
       searchParams: data.search_params,
       results: data.results,
     });
-  } catch (error) {
-    console.error("Error retrieving share:", error);
+  } catch {
     res.status(500).json({ error: "Failed to retrieve share" });
   }
 });

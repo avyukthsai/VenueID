@@ -4,6 +4,7 @@ dotenv.config();
 const express = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 const searchesRouter = require("./searches");
 const sharesRouter = require("./shares");
 const supabase = require("./supabase");
@@ -16,15 +17,38 @@ const {
   mergeAndDeduplicateVenues,
 } = require("./services/foursquare");
 
+// Fail fast if required env vars are missing
+const REQUIRED_ENV = ["GEMINI_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "FRONTEND_URL"];
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    console.error(`Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+
 const app = express();
 const port = 3001;
 
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
-  }),
-);
-app.use(express.json());
+// Rate limiters
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+});
+
+const venueLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again in 15 minutes." },
+});
+
+app.use(globalLimiter);
+app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(express.json({ limit: "50kb" }));
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -98,6 +122,16 @@ app.get("/test", (req, res) => {
   res.json({ message: "Server is working", timestamp: new Date() });
 });
 
+// ─── Constants ──────────────────────────────────────────────────────────────
+const MAX_SEARCH_LIMIT = 5;
+const MAX_VENUES_TO_RANK = 15;
+const MAX_RETRIES = 2;
+const GEMINI_TIMEOUT_MS = 30000;
+
+const VALID_VENUE_TYPES = ["Artist Venue", "Party Venue", "Wedding Venue", "Sports Tournament", "Theater Show"];
+const VALID_VENUE_SETTINGS = ["Indoor", "Outdoor", "Both"];
+const VALID_AUDIENCE_TYPES = ["General / All Ages", "21+", "Corporate / Professional", "Family Friendly"];
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function validateAndCompleteVenue(venue) {
@@ -132,34 +166,9 @@ function validateVenueResponse(responseData) {
       .map((venue) => validateAndCompleteVenue(venue));
 
     return validatedVenues.length === 0 ? null : { venues: validatedVenues };
-  } catch (error) {
-    console.error("Error validating venue response:", error);
+  } catch {
     return null;
   }
-}
-
-function convertJsonVenuesToText(venuesData) {
-  return venuesData.venues
-    .map(
-      (venue) =>
-        `**Venue:** ${venue.name}\n` +
-        `**Why this venue?** ${venue.whyThisVenue}\n` +
-        `**Address:** ${venue.address}\n` +
-        `**Capacity:** ${venue.capacity}\n` +
-        `**Location:** ${venue.location}\n` +
-        `**Features:** ${venue.features}\n` +
-        `**Visit Website:** ${venue.website}\n` +
-        `**Time & Date:** ${venue.dateTime}`,
-    )
-    .join("\n-----\n");
-}
-
-function getGeminiErrorDetails(error) {
-  const status =
-    error?.status || error?.response?.status || error?.response?.statusCode || null;
-  const message =
-    error?.message || error?.response?.statusText || "Unknown Gemini API error";
-  return { status, message };
 }
 
 function delay(ms) {
@@ -230,7 +239,6 @@ async function checkAndIncrementSearchCount(userId) {
       .single();
 
     if (fetchError && fetchError.code !== "PGRST116") {
-      console.error("Error fetching search count:", fetchError);
       return { error: "Failed to check search limit", code: "DB_ERROR" };
     }
 
@@ -243,12 +251,11 @@ async function checkAndIncrementSearchCount(userId) {
         .insert([{ user_id: userId, search_count: 0 }]);
 
       if (insertError) {
-        console.error("Error inserting new user search count:", insertError);
         return { error: "Failed to initialize search count", code: "DB_ERROR" };
       }
     }
 
-    if (currentCount >= 5) {
+    if (currentCount >= MAX_SEARCH_LIMIT) {
       return { limitReached: true, currentCount };
     }
 
@@ -258,13 +265,11 @@ async function checkAndIncrementSearchCount(userId) {
       .eq("user_id", userId);
 
     if (updateError) {
-      console.error("Error incrementing search count:", updateError);
       return { error: "Failed to update search count", code: "DB_ERROR" };
     }
 
     return { limitReached: false, newCount: currentCount + 1 };
-  } catch (error) {
-    console.error("Unexpected error in checkAndIncrementSearchCount:", error);
+  } catch {
     return { error: "Unexpected error", code: "UNKNOWN_ERROR" };
   }
 }
@@ -278,13 +283,11 @@ async function getUserSearchCount(userId) {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      console.error("Error fetching search count:", error);
       return { error: "Failed to fetch search count" };
     }
 
     return { searchCount: data?.search_count || 0 };
-  } catch (error) {
-    console.error("Error in getUserSearchCount:", error);
+  } catch {
     return { error: "Failed to fetch search count" };
   }
 }
@@ -297,13 +300,11 @@ async function addToWaitlist(email) {
       if (error.code === "23505") {
         return { success: false, message: "Email already on waitlist" };
       }
-      console.error("Error adding to waitlist:", error);
       return { success: false, message: "Failed to add email to waitlist" };
     }
 
     return { success: true, message: "Email added to waitlist" };
-  } catch (error) {
-    console.error("Error in addToWaitlist:", error);
+  } catch {
     return { success: false, message: "Failed to add email to waitlist" };
   }
 }
@@ -339,14 +340,13 @@ async function generateVenueRecommendations({
     allVenues = mergeAndDeduplicateVenues(ticketmasterVenues, foursquareVenues);
 
     if (allVenues.length >= 5) {
-      venueContext = formatTicketmasterVenues(allVenues.slice(0, 15));
+      venueContext = formatTicketmasterVenues(allVenues.slice(0, MAX_VENUES_TO_RANK));
       venueContext = venueContext.replace(
         "REAL VENUES AVAILABLE IN THE AREA",
         "REAL VENUES FROM MULTIPLE VERIFIED SOURCES",
       );
     }
-  } catch (error) {
-    console.error("Error fetching venues from APIs:", error);
+  } catch {
     // Continue without real venue data if APIs fail
   }
 
@@ -376,9 +376,8 @@ async function generateVenueRecommendations({
   }
 
   let retryCount = 0;
-  const maxRetries = 2;
 
-  while (retryCount <= maxRetries) {
+  while (retryCount <= MAX_RETRIES) {
     try {
       const model = genAI.getGenerativeModel({
         model: "gemini-3-flash-preview",
@@ -386,7 +385,12 @@ async function generateVenueRecommendations({
         systemInstruction: enhancedSystemInstruction,
       });
 
-      const result = await model.startChat({ history: [] }).sendMessage(inputText);
+      const result = await Promise.race([
+        model.startChat({ history: [] }).sendMessage(inputText),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Gemini request timed out")), GEMINI_TIMEOUT_MS)
+        ),
+      ]);
       const responseText = result.response.text();
 
       // Strip markdown code fences if present
@@ -400,9 +404,8 @@ async function generateVenueRecommendations({
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(cleanedText);
-      } catch (parseError) {
-        console.error("Failed to parse Gemini JSON response:", parseError.message);
-        if (retryCount < maxRetries) {
+      } catch {
+        if (retryCount < MAX_RETRIES) {
           retryCount++;
           continue;
         }
@@ -411,7 +414,7 @@ async function generateVenueRecommendations({
 
       const validatedData = validateVenueResponse(parsedResponse);
       if (!validatedData) {
-        if (retryCount < maxRetries) {
+        if (retryCount < MAX_RETRIES) {
           retryCount++;
           continue;
         }
@@ -419,10 +422,8 @@ async function generateVenueRecommendations({
       }
 
       return { validatedData, responseText };
-    } catch (error) {
-      const geminiError = getGeminiErrorDetails(error);
-      console.error("Error calling Gemini API:", geminiError, error);
-      if (retryCount < maxRetries) {
+    } catch {
+      if (retryCount < MAX_RETRIES) {
         retryCount++;
         await delay(600 * retryCount);
         continue;
@@ -438,7 +439,7 @@ async function generateVenueRecommendations({
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 // Primary endpoint: returns structured JSON venues with match scores
-app.post("/api/venues/stream", async (req, res) => {
+app.post("/api/venues/stream", venueLimiter, async (req, res) => {
   const {
     venueType, country, state, city, date, time,
     audienceInput, venueSetting, audienceType,
@@ -455,10 +456,43 @@ app.post("/api/venues/stream", async (req, res) => {
   if (!userId) missingFields.push("userId");
 
   if (missingFields.length > 0) {
-    return res.status(400).json({
-      error: "All input fields are required.",
-      missingFields,
-    });
+    return res.status(400).json({ error: "All input fields are required.", missingFields });
+  }
+
+  // Type validation
+  const requiredStrings = { venueType, country, city, date, time, audienceInput, userId };
+  for (const [field, val] of Object.entries(requiredStrings)) {
+    if (typeof val !== "string") {
+      return res.status(400).json({ error: `Invalid type for field: ${field}` });
+    }
+  }
+  if (additionalRequirements !== undefined && typeof additionalRequirements !== "string") {
+    return res.status(400).json({ error: "Invalid type for field: additionalRequirements" });
+  }
+
+  // Length validation
+  if (venueType.length > 100 || country.length > 100 || city.length > 100 ||
+      date.length > 20 || time.length > 20 || audienceInput.length > 50) {
+    return res.status(400).json({ error: "Input field exceeds maximum length." });
+  }
+  if (additionalRequirements && additionalRequirements.length > 500) {
+    return res.status(400).json({ error: "Additional requirements must be 500 characters or fewer." });
+  }
+
+  // Enum validation
+  if (!VALID_VENUE_TYPES.includes(venueType)) {
+    return res.status(400).json({ error: "Invalid venue type." });
+  }
+  if (venueSetting && !VALID_VENUE_SETTINGS.includes(venueSetting)) {
+    return res.status(400).json({ error: "Invalid venue setting." });
+  }
+  if (audienceType && !VALID_AUDIENCE_TYPES.includes(audienceType)) {
+    return res.status(400).json({ error: "Invalid audience type." });
+  }
+
+  // Date format validation (YYYY-MM-DD)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD." });
   }
 
   // Check search limit (when enabled)
@@ -494,40 +528,6 @@ app.post("/api/venues/stream", async (req, res) => {
     venues: result.validatedData.venues,
     success: true,
   });
-});
-
-// Legacy endpoint: returns text-formatted venue response
-app.post("/generate-venue", async (req, res) => {
-  const {
-    venueType, country, state, city, date, time,
-    audienceInput, venueSetting, audienceType, additionalRequirements,
-  } = req.body;
-
-  const missingFields = [];
-  if (!venueType) missingFields.push("venueType");
-  if (!country) missingFields.push("country");
-  if (!city) missingFields.push("city");
-  if (!date) missingFields.push("date");
-  if (!time) missingFields.push("time");
-  if (!audienceInput) missingFields.push("audienceInput");
-
-  if (missingFields.length > 0) {
-    return res.status(400).json({
-      error: "All input fields are required.",
-      missingFields,
-    });
-  }
-
-  const result = await generateVenueRecommendations({
-    venueType, country, state, city, date, time,
-    audienceInput, venueSetting, audienceType, additionalRequirements,
-  });
-
-  if (result.error) {
-    return res.status(result.statusCode || 500).json({ error: result.error });
-  }
-
-  res.json({ response: convertJsonVenuesToText(result.validatedData) });
 });
 
 // Get user's current search count
@@ -571,7 +571,7 @@ app.post("/api/waitlist", async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Backend server listening on port ${port}`);
+  console.log(`Backend server running on port ${port}`);
 });
 
 process.on("uncaughtException", (error) => {

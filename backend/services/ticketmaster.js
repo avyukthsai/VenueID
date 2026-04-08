@@ -1,5 +1,7 @@
 const axios = require("axios");
 
+const TICKETMASTER_RESULTS_SIZE = 20;
+
 // Mapping of app event types to Ticketmaster search keywords
 const eventTypeKeywords = {
   "Artist Venue": "music concert",
@@ -40,7 +42,7 @@ async function getVenuesByLocation(city, state, eventType) {
       stateCode: stateCode,
       keyword: keyword,
       countryCode: "US",
-      size: 20,
+      size: TICKETMASTER_RESULTS_SIZE,
     };
 
     // Call Ticketmaster Discovery API with timeout
@@ -72,13 +74,7 @@ async function getVenuesByLocation(city, state, eventType) {
     }));
 
     return cleanedVenues;
-  } catch (error) {
-    if (error.code === "ECONNABORTED") {
-      console.warn("Ticketmaster request timeout - took too long");
-    } else {
-      console.error("Error fetching venues from Ticketmaster:", error.message);
-    }
-    // Gracefully return empty array on error
+  } catch {
     return [];
   }
 }

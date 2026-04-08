@@ -112,7 +112,8 @@ function Toast({ message, type, onClose }) {
   React.useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
-  }, [onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <div className={`toast toast-${type}`}>{message}</div>;
 }
@@ -160,8 +161,8 @@ function App() {
         setLimitsEnabled(data.limitsEnabled ?? false);
         setLimitReached(data.limitsEnabled && data.searchCount >= 5);
       }
-    } catch (err) {
-      console.error("Error fetching search count:", err);
+    } catch {
+      // silently ignore — UI already shows no limit
     } finally {
       setLoadingSearchCount(false);
     }
@@ -188,8 +189,7 @@ function App() {
         const data = await response.json();
         addToast(data.error || "Failed to add email to waitlist", "error");
       }
-    } catch (err) {
-      console.error("Error adding to waitlist:", err);
+    } catch {
       addToast("Failed to add email to waitlist", "error");
     } finally {
       setWaitlistSubmitting(false);
@@ -249,8 +249,7 @@ function App() {
       }
 
       addToast("Results saved successfully", "success");
-    } catch (err) {
-      console.error("Error saving results:", err);
+    } catch {
       addToast("Something went wrong, please try again", "error");
     } finally {
       setSaving(false);
@@ -279,8 +278,7 @@ function App() {
       addToast("Link copied to clipboard!", "success");
 
       setTimeout(() => setSharing(false), 2000);
-    } catch (err) {
-      console.error("Error sharing results:", err);
+    } catch {
       addToast("Failed to create share link", "error");
       setSharing(false);
     }
@@ -348,7 +346,6 @@ function App() {
         setStreamingVenues(data.venues);
       }
     } catch (err) {
-      console.error("Error fetching venue data:", err);
       setError("Failed to get response: " + err.message);
     } finally {
       setLoading(false);
@@ -934,7 +931,7 @@ function App() {
                 <h2>Top Venue Picks</h2>
                 {streamingVenues.map((venue, index) => (
                   <VenueCard
-                    key={index}
+                    key={`venue-${index}-${venue.name}`}
                     venue={normalizeVenue(venue)}
                     style={{
                       animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`,
@@ -1075,8 +1072,7 @@ function App() {
             </div>
             <div className="footer-col">
               <h4>Legal</h4>
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms of Service</a>
+              <a href="mailto:support@venueid.app">Privacy Inquiries</a>
             </div>
           </div>
         </div>

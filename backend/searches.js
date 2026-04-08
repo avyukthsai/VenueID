@@ -27,7 +27,6 @@ router.post("/", async (req, res) => {
       .select();
 
     if (error) {
-      console.error("Supabase insertion error:", error);
       return res.status(500).json({ error: "Failed to save search" });
     }
 
@@ -35,8 +34,7 @@ router.post("/", async (req, res) => {
       message: "Search saved successfully",
       data: data,
     });
-  } catch (error) {
-    console.error("Error saving search:", error);
+  } catch {
     res.status(500).json({ error: "Failed to save search" });
   }
 });
@@ -57,7 +55,6 @@ router.get("/:userId", async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Supabase query error:", error);
       return res.status(500).json({ error: "Failed to retrieve searches" });
     }
 
@@ -65,8 +62,7 @@ router.get("/:userId", async (req, res) => {
       message: "Searches retrieved successfully",
       data: data,
     });
-  } catch (error) {
-    console.error("Error retrieving searches:", error);
+  } catch {
     res.status(500).json({ error: "Failed to retrieve searches" });
   }
 });
@@ -108,13 +104,11 @@ router.delete("/:id", async (req, res) => {
       .eq("id", id);
 
     if (deleteError) {
-      console.error("Supabase deletion error:", deleteError);
       return res.status(500).json({ error: "Failed to delete search" });
     }
 
     res.json({ message: "Search deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting search:", error);
+  } catch {
     res.status(500).json({ error: "Failed to delete search" });
   }
 });

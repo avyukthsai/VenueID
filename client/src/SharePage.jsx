@@ -31,7 +31,6 @@ function SharePage() {
         setSearchParams(data.searchParams);
         setResults(data.results);
       } catch (err) {
-        console.error("Error fetching shared search:", err);
         setError(
           err.message || "Failed to load shared search. Please try again.",
         );
@@ -100,7 +99,7 @@ function SharePage() {
         <div className="response-container">
           <h2>Top Venue Picks</h2>
           {parseVenues(results).map((venue, i) => (
-            <VenueCard key={i} venue={normalizeVenue(venue)} />
+            <VenueCard key={`venue-${i}-${venue.name || venue.venue}`} venue={normalizeVenue(venue)} />
           ))}
         </div>
       </div>

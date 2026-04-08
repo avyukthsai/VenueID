@@ -1,5 +1,7 @@
 const axios = require("axios");
 
+const FOURSQUARE_RESULTS_LIMIT = 15;
+
 // Mapping of app event types to Foursquare category IDs
 const eventTypeCategoryIds = {
   "Artist Venue": [10032, 10005],
@@ -50,7 +52,7 @@ async function getVenuesByCategory(city, state, eventType) {
           params: {
             near: nearParam,
             categories: categoryId,
-            limit: 15,
+            limit: FOURSQUARE_RESULTS_LIMIT,
             sort: "RELEVANCE",
           },
           headers: {
@@ -59,27 +61,7 @@ async function getVenuesByCategory(city, state, eventType) {
           },
           timeout: 5000, // 5 second timeout
         })
-        .catch((error) => {
-          let errorMsg = error.message || "Unknown error";
-          if (error.response?.status) {
-            errorMsg = `Status ${error.response.status}: ${error.response.statusText}`;
-          }
-          if (error.code === "ECONNABORTED") {
-            console.warn(
-              `Foursquare request timeout for category ${categoryId} - took too long`,
-            );
-          } else {
-            console.error(
-              `Error fetching Foursquare category ${categoryId}:`,
-              errorMsg,
-            );
-          }
-          console.error(`Full error details:`, {
-            message: error.message,
-            code: error.code,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-          });
+        .catch(() => {
           return { data: { results: [] } };
         }),
     );
@@ -103,9 +85,7 @@ async function getVenuesByCategory(city, state, eventType) {
     }
 
     return allVenues;
-  } catch (error) {
-    console.error("Error fetching venues from Foursquare:", error.message);
-    // Gracefully return empty array on error
+  } catch {
     return [];
   }
 }
