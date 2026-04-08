@@ -993,7 +993,6 @@ function App() {
           <div className="features-grid">
             <div className="feature-card feature-card--large">
               <div className="feature-card-glow" />
-              <span className="feature-num">01</span>
               <div className="feature-card-body">
                 <h3>
                   Real Venue
@@ -1008,7 +1007,6 @@ function App() {
             </div>
 
             <div className="feature-card">
-              <span className="feature-num">02</span>
               <div className="feature-card-body">
                 <h3>AI‑Powered Matching</h3>
                 <p>
@@ -1019,7 +1017,6 @@ function App() {
             </div>
 
             <div className="feature-card">
-              <span className="feature-num">03</span>
               <div className="feature-card-body">
                 <h3>Instant Results</h3>
                 <p>
@@ -1030,7 +1027,6 @@ function App() {
             </div>
 
             <div className="feature-card feature-card--wide">
-              <span className="feature-num">04</span>
               <div className="feature-card-body">
                 <h3>Share with Anyone</h3>
                 <p>
