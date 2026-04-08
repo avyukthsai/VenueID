@@ -18,7 +18,7 @@ const {
 } = require("./services/foursquare");
 
 // Fail fast if required env vars are missing
-const REQUIRED_ENV = ["GEMINI_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "FRONTEND_URL"];
+const REQUIRED_ENV = ["GEMINI_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"];
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
     console.error(`Missing required environment variable: ${key}`);
@@ -47,7 +47,7 @@ const venueLimiter = rateLimit({
 });
 
 app.use(globalLimiter);
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
 app.use(express.json({ limit: "50kb" }));
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);

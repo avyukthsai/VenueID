@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 import HistoryPage from "./HistoryPage.jsx";
 import SharePage from "./SharePage.jsx";
-import { ClerkProvider, SignedIn, RedirectToSignIn } from "@clerk/react";
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 const clerkAppearance = {
@@ -315,9 +315,10 @@ createRoot(document.getElementById("root")).render(
           <Route
             path="/history"
             element={
-              <SignedIn fallback={<RedirectToSignIn />}>
-                <HistoryPage />
-              </SignedIn>
+              <>
+                <SignedIn><HistoryPage /></SignedIn>
+                <SignedOut><RedirectToSignIn /></SignedOut>
+              </>
             }
           />
           <Route path="/share/:token" element={<SharePage />} />
