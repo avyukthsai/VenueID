@@ -329,14 +329,14 @@ function App() {
         }
 
         const errorText = await response.text();
+        let errorMessage = `HTTP error! status: ${response.status}`;
         try {
           const errorData = JSON.parse(errorText);
-          throw new Error(
-            errorData.error || `HTTP error! status: ${response.status}`,
-          );
+          if (errorData.error) errorMessage = errorData.error;
         } catch {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // response wasn't JSON, use generic message
         }
+        throw new Error(errorMessage);
       }
 
       if (user?.id) fetchSearchCount(user.id);
@@ -833,7 +833,7 @@ function App() {
                   <div className="radio-group">
                     {[
                       "General / All Ages",
-                      "21+ Only",
+                      "21+",
                       "Corporate / Professional",
                     ].map((option) => (
                       <div

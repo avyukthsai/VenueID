@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 import HistoryPage from "./HistoryPage.jsx";
 import SharePage from "./SharePage.jsx";
-import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/react";
+import { ClerkProvider, Show, RedirectToSignIn } from "@clerk/react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 const clerkAppearance = {
@@ -305,25 +305,26 @@ const clerkAppearance = {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ClerkProvider
-      afterSignOutUrl="/"
-      appearance={clerkAppearance}
-    >
-      <BrowserRouter>
+    <BrowserRouter>
+      <ClerkProvider
+        publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+        afterSignOutUrl="/"
+        appearance={clerkAppearance}
+      >
         <Routes>
           <Route path="/" element={<App />} />
           <Route
             path="/history"
             element={
               <>
-                <SignedIn><HistoryPage /></SignedIn>
-                <SignedOut><RedirectToSignIn /></SignedOut>
+                <Show when="signed-in"><HistoryPage /></Show>
+                <Show when="signed-out"><RedirectToSignIn /></Show>
               </>
             }
           />
           <Route path="/share/:token" element={<SharePage />} />
         </Routes>
-      </BrowserRouter>
-    </ClerkProvider>
+      </ClerkProvider>
+    </BrowserRouter>
   </StrictMode>,
 );
