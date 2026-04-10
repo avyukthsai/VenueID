@@ -144,12 +144,32 @@ function App() {
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [loadingSearchCount, setLoadingSearchCount] = useState(false);
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
 
   React.useEffect(() => {
     if (user?.id) {
       fetchSearchCount(user.id);
     }
   }, [user?.id]);
+
+  const LOADING_MESSAGES = [
+    "Searching venues...",
+    "Analyzing capacity fit...",
+    "Checking availability...",
+    "Scoring venue matches...",
+    "Almost there...",
+  ];
+
+  React.useEffect(() => {
+    if (!loading) {
+      setLoadingMsgIndex(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const fetchSearchCount = async (userId) => {
     setLoadingSearchCount(true);
@@ -1084,6 +1104,21 @@ function App() {
       </footer>
 
       {showContact && <ContactModal onClose={() => setShowContact(false)} />}
+
+      {loading && (
+        <div className="venue-loader-overlay">
+          <div className="venue-loader-inner">
+            <div className="venue-loader-bars">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <div key={n} className={`venue-loader-bar venue-loader-bar-${n}`} />
+              ))}
+            </div>
+            <p key={loadingMsgIndex} className="venue-loader-text">
+              {LOADING_MESSAGES[loadingMsgIndex]}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

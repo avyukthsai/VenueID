@@ -47,14 +47,20 @@
 }
 
 .response-container h2 {
-  font-size: 1.8em;
-  font-weight: 700;
-  margin: 0 0 32px 0;
+  display: inline-block;
+  margin: 0 auto 32px;
+  padding: 10px 28px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 2.2em;
+  font-weight: 900;
   letter-spacing: -0.5px;
+  color: #ffffff;
   background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  box-shadow:
+    0 0 24px rgba(16, 185, 129, 0.6),
+    0 0 60px rgba(16, 185, 129, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* --- Error State --- */

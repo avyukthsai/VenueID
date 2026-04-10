@@ -922,18 +922,31 @@ body {
   max-width: 900px;
   margin-top: 40px;
   padding: 0 20px;
+  text-align: center;
 }
 
 .response-container h2 {
-  color: #1f2937;
-  margin: 0 0 32px 0;
+  display: inline-block;
+  margin: 0 auto 32px;
+  padding: 10px 28px;
+  border-radius: 999px;
   text-align: center;
-  font-size: 2em;
-  font-weight: 800;
+  font-size: 2.2em;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #ffffff;
   background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  box-shadow:
+    0 0 24px rgba(16, 185, 129, 0.6),
+    0 0 60px rgba(16, 185, 129, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 768px) {
+  .response-container h2 {
+    font-size: 1.5em;
+    padding: 8px 20px;
+  }
 }
 
 /* ============================================================
@@ -2111,4 +2124,73 @@ body {
 .cl-scrollBox::-webkit-scrollbar-track,
 .cl-pageScrollBox::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* ── Venue Loader Overlay ─────────────────────────────────────────────── */
+.venue-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(8, 15, 25, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: loaderFadeIn 0.3s ease forwards;
+}
+
+@keyframes loaderFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.venue-loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+/* Waveform bars */
+.venue-loader-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  height: 52px;
+}
+
+.venue-loader-bar {
+  width: 6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #10b981 0%, #0ea5e9 100%);
+  transform-origin: bottom center;
+  animation: barBounce 1.1s ease-in-out infinite;
+}
+
+.venue-loader-bar-1 { animation-delay: 0s;    height: 22px; }
+.venue-loader-bar-2 { animation-delay: 0.15s; height: 36px; }
+.venue-loader-bar-3 { animation-delay: 0.3s;  height: 52px; }
+.venue-loader-bar-4 { animation-delay: 0.15s; height: 36px; }
+.venue-loader-bar-5 { animation-delay: 0s;    height: 22px; }
+
+@keyframes barBounce {
+  0%, 100% { transform: scaleY(0.35); opacity: 0.55; }
+  50%       { transform: scaleY(1);   opacity: 1;    }
+}
+
+/* Cycling message text — key trick re-mounts element each message change */
+.venue-loader-text {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: -0.2px;
+  margin: 0;
+  animation: venueMsgFade 0.45s ease forwards;
+}
+
+@keyframes venueMsgFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
 }
