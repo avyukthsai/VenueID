@@ -380,7 +380,7 @@ async function generateVenueRecommendations({
   while (retryCount <= MAX_RETRIES) {
     try {
       const model = genAI.getGenerativeModel({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.5-flash",
         generationConfig,
         systemInstruction: enhancedSystemInstruction,
       });
@@ -453,20 +453,18 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
   if (!date) missingFields.push("date");
   if (!time) missingFields.push("time");
   if (!audienceInput) missingFields.push("audienceInput");
+  if (!userId) missingFields.push("userId");
 
   if (missingFields.length > 0) {
     return res.status(400).json({ error: "All input fields are required.", missingFields });
   }
 
   // Type validation
-  const requiredStrings = { venueType, country, city, date, time, audienceInput };
+  const requiredStrings = { venueType, country, city, date, time, audienceInput, userId };
   for (const [field, val] of Object.entries(requiredStrings)) {
     if (typeof val !== "string") {
       return res.status(400).json({ error: `Invalid type for field: ${field}` });
     }
-  }
-  if (userId !== undefined && typeof userId !== "string") {
-    return res.status(400).json({ error: "Invalid type for field: userId" });
   }
   if (additionalRequirements !== undefined && typeof additionalRequirements !== "string") {
     return res.status(400).json({ error: "Invalid type for field: additionalRequirements" });
