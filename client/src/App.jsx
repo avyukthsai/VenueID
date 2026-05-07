@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./App.css";
-import { Show, useUser } from "@clerk/react";
+import { Show, SignInButton, useUser } from "@clerk/react";
 import { Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import VenueCard from "./components/VenueCard";
@@ -118,6 +118,46 @@ function Toast({ message, type, onClose }) {
   return <div className={`toast toast-${type}`}>{message}</div>;
 }
 
+const TYPEWRITER_PHRASES = [
+  "for any event.",
+  "for your dream wedding.",
+  "for your next concert.",
+  "for your tournament.",
+  "for your theater show.",
+];
+
+function TypewriterHeadline() {
+  const [text, setText] = React.useState("");
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [phraseIndex, setPhraseIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    const phrase = TYPEWRITER_PHRASES[phraseIndex];
+    let timeout;
+    if (!isDeleting && text === phrase) {
+      timeout = setTimeout(() => setIsDeleting(true), 2000);
+    } else if (isDeleting && text === "") {
+      setIsDeleting(false);
+      setPhraseIndex((i) => (i + 1) % TYPEWRITER_PHRASES.length);
+    } else if (isDeleting) {
+      timeout = setTimeout(() => setText(phrase.slice(0, text.length - 1)), 45);
+    } else {
+      timeout = setTimeout(() => setText(phrase.slice(0, text.length + 1)), 80);
+    }
+    return () => clearTimeout(timeout);
+  }, [text, isDeleting, phraseIndex]);
+
+  return (
+    <h2 className="hero-headline">
+      <span className="hero-headline-static">Find the perfect venue</span>
+      <span className="hero-typewriter-line">
+        <span className="hero-headline-accent">{text}</span>
+        <span className="hero-typewriter-cursor" aria-hidden="true">|</span>
+      </span>
+    </h2>
+  );
+}
+
 function App() {
   const { user } = useUser();
   const [showContact, setShowContact] = useState(false);
@@ -139,10 +179,11 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [streamingVenues, setStreamingVenues] = useState([]);
   const [searchCount, setSearchCount] = useState(0);
-  const [limitsEnabled, setLimitsEnabled] = useState(false);
+  const [resetDate, setResetDate] = useState(null);
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [loadingSearchCount, setLoadingSearchCount] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
 
@@ -174,15 +215,15 @@ function App() {
   const fetchSearchCount = async (userId) => {
     setLoadingSearchCount(true);
     try {
-      const response = await fetch(`${API_URL}/api/searches/count/${userId}`);
+      const response = await fetch(`${API_URL}/api/search-limits/${userId}`);
       const data = await response.json();
       if (data.searchCount !== undefined) {
         setSearchCount(data.searchCount);
-        setLimitsEnabled(data.limitsEnabled ?? false);
-        setLimitReached(data.limitsEnabled && data.searchCount >= 5);
+        setResetDate(data.resetDate ?? null);
+        setLimitReached(data.searchCount >= 10);
       }
     } catch {
-      // silently ignore — UI already shows no limit
+      // silently ignore
     } finally {
       setLoadingSearchCount(false);
     }
@@ -305,6 +346,11 @@ function App() {
   };
 
   const handleStreamingSubmit = async () => {
+    if (!user) {
+      setShowSignInPrompt(true);
+      return;
+    }
+
     setError("");
     setCityError("");
 
@@ -337,13 +383,15 @@ function App() {
           ...buildSearchParams(),
           date: date.toString(),
           userId: user?.id,
+          userEmail: user?.primaryEmailAddress?.emailAddress,
         }),
       });
 
       if (!response.ok) {
         if (response.status === 429) {
+          const limitData = await response.json().catch(() => ({}));
+          if (limitData.resetDate) setResetDate(limitData.resetDate);
           setLimitReached(true);
-          setError("Search limit reached");
           setLoading(false);
           return;
         }
@@ -401,13 +449,10 @@ function App() {
           </svg>
         </div>
         <div className="hero-content">
-          <h2 className="hero-headline">
-            Find the perfect venue{" "}
-            <span className="hero-headline-accent">for any event.</span>
-          </h2>
+          <TypewriterHeadline />
           <p className="hero-subtitle">
-            AI-powered recommendations grounded in real venue data across
-            thousands of locations.
+            <span className="hero-subtitle-accent">AI-powered</span>{" "}
+            recommendations grounded in real venue data across thousands of locations.
           </p>
         </div>
 
@@ -878,7 +923,7 @@ function App() {
 
               <button
                 onClick={handleStreamingSubmit}
-                disabled={loading || (user && limitReached)}
+                disabled={loading || limitReached}
                 className="generate-button"
               >
                 {loading ? (
@@ -891,21 +936,21 @@ function App() {
                 )}
               </button>
 
-              {/* Search counter — only shown when limits are enabled */}
+              {/* Search counter */}
               <Show when="signed-in">
                 {loadingSearchCount ? (
                   <p className="search-counter search-counter-loading">
                     Loading...
                   </p>
-                ) : limitsEnabled ? (
+                ) : (
                   <p
-                    className={`search-counter search-counter-${searchCount >= 5 ? "max" : searchCount >= 4 ? "warning" : "normal"}`}
+                    className={`search-counter search-counter-${searchCount >= 10 ? "max" : searchCount >= 9 ? "warning" : "normal"}`}
                   >
-                    {searchCount === 5
+                    {searchCount >= 10
                       ? "Search limit reached"
-                      : `${searchCount} of 5 free searches used`}
+                      : `${searchCount} of 10 free searches used`}
                   </p>
-                ) : null}
+                )}
               </Show>
               <Show when="signed-out">
                 <p className="search-counter search-counter-signout">
@@ -915,14 +960,20 @@ function App() {
             </div>
 
             {/* Limit reached — waitlist signup */}
-            {limitReached && user && (
+            {limitReached && (
               <div className="limit-reached-container">
                 <div className="limit-reached-message">
-                  <h3>Search limit reached</h3>
-                  <p>
-                    You've used all 5 free searches. Upgrade coming soon — enter
-                    your email to be notified when Pro launches.
-                  </p>
+                  <h3>You've used all 10 free searches this month</h3>
+                  {resetDate && (
+                    <p className="limit-reset-date">
+                      Your searches reset on{" "}
+                      {new Date(resetDate).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                  )}
                   <div className="waitlist-form">
                     <input
                       type="email"
@@ -937,9 +988,37 @@ function App() {
                       className="waitlist-button"
                       disabled={waitlistSubmitting || !waitlistEmail}
                     >
-                      {waitlistSubmitting ? "Saving..." : "Notify me"}
+                      {waitlistSubmitting ? "Saving..." : "Join the Waitlist"}
                     </button>
                   </div>
+                  <p className="limit-pro-subtext">
+                    Venue ID Pro is coming soon — waitlist members get first access and a discount
+                  </p>
+                  <button
+                    className="limit-go-back-button"
+                    onClick={() => setLimitReached(false)}
+                  >
+                    Go Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Unauthenticated search attempt — sign-in prompt */}
+            {showSignInPrompt && !user && (
+              <div className="limit-reached-container">
+                <div className="limit-reached-message">
+                  <h3>Sign in to search</h3>
+                  <p>Create a free account to find your perfect venue.</p>
+                  <SignInButton mode="modal">
+                    <button className="waitlist-button">Sign In</button>
+                  </SignInButton>
+                  <button
+                    className="limit-go-back-button"
+                    onClick={() => setShowSignInPrompt(false)}
+                  >
+                    Go Back
+                  </button>
                 </div>
               </div>
             )}

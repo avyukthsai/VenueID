@@ -5,6 +5,7 @@ const express = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
+const { Resend } = require("resend");
 const searchesRouter = require("./searches");
 const sharesRouter = require("./shares");
 const supabase = require("./supabase");
@@ -123,7 +124,6 @@ app.get("/test", (req, res) => {
 });
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const MAX_SEARCH_LIMIT = 5;
 const MAX_VENUES_TO_RANK = 15;
 const MAX_RETRIES = 2;
 const GEMINI_TIMEOUT_MS = 30000;
@@ -230,68 +230,6 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
   return Math.round(min + (score / 100) * (max - min));
 }
 
-async function checkAndIncrementSearchCount(userId) {
-  try {
-    const { data: existingUser, error: fetchError } = await supabase
-      .from("user_search_counts")
-      .select("search_count")
-      .eq("user_id", userId)
-      .single();
-
-    if (fetchError && fetchError.code !== "PGRST116") {
-      return { error: "Failed to check search limit", code: "DB_ERROR" };
-    }
-
-    let currentCount = 0;
-    if (existingUser) {
-      currentCount = existingUser.search_count;
-    } else {
-      const { error: insertError } = await supabase
-        .from("user_search_counts")
-        .insert([{ user_id: userId, search_count: 0 }]);
-
-      if (insertError) {
-        return { error: "Failed to initialize search count", code: "DB_ERROR" };
-      }
-    }
-
-    if (currentCount >= MAX_SEARCH_LIMIT) {
-      return { limitReached: true, currentCount };
-    }
-
-    const { error: updateError } = await supabase
-      .from("user_search_counts")
-      .update({ search_count: currentCount + 1 })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      return { error: "Failed to update search count", code: "DB_ERROR" };
-    }
-
-    return { limitReached: false, newCount: currentCount + 1 };
-  } catch {
-    return { error: "Unexpected error", code: "UNKNOWN_ERROR" };
-  }
-}
-
-async function getUserSearchCount(userId) {
-  try {
-    const { data, error } = await supabase
-      .from("user_search_counts")
-      .select("search_count")
-      .eq("user_id", userId)
-      .single();
-
-    if (error && error.code !== "PGRST116") {
-      return { error: "Failed to fetch search count" };
-    }
-
-    return { searchCount: data?.search_count || 0 };
-  } catch {
-    return { error: "Failed to fetch search count" };
-  }
-}
-
 async function addToWaitlist(email) {
   try {
     const { error } = await supabase.from("waitlist").insert([{ email }]).select();
@@ -306,6 +244,78 @@ async function addToWaitlist(email) {
     return { success: true, message: "Email added to waitlist" };
   } catch {
     return { success: false, message: "Failed to add email to waitlist" };
+  }
+}
+
+function getFirstDayOfNextMonth() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
+}
+
+async function sendLimitNotificationEmail(userId, userEmail) {
+  if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) return;
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: "Venue ID <noreply@venueid.app>",
+      to: process.env.ADMIN_EMAIL,
+      subject: "User hit 10-search limit",
+      html: `<p>User <strong>${userEmail || "unknown"}</strong> (ID: ${userId}) has used all 10 free searches this month.</p>`,
+    });
+  } catch {
+    console.error("Failed to send limit notification email");
+  }
+}
+
+async function checkAndIncrementMonthlySearchCount(userId, userEmail) {
+  try {
+    const { data, error } = await supabase
+      .from("user_search_limits")
+      .select("search_count, reset_date")
+      .eq("user_id", userId)
+      .single();
+
+    const now = new Date();
+
+    if (error && error.code === "PGRST116") {
+      // New user — create record, count this as search #1
+      const resetDate = getFirstDayOfNextMonth();
+      const { error: insertError } = await supabase
+        .from("user_search_limits")
+        .insert([{ user_id: userId, search_count: 1, reset_date: resetDate }]);
+      if (insertError) return { error: "DB_ERROR" };
+      return { limitReached: false, newCount: 1, resetDate };
+    }
+
+    if (error) return { error: "DB_ERROR" };
+
+    let { search_count, reset_date } = data;
+
+    // Auto-reset if monthly period has passed
+    if (new Date(reset_date) <= now) {
+      search_count = 0;
+      reset_date = getFirstDayOfNextMonth();
+    }
+
+    if (search_count >= 10) {
+      return { limitReached: true, resetDate: reset_date };
+    }
+
+    const newCount = search_count + 1;
+    const { error: updateError } = await supabase
+      .from("user_search_limits")
+      .update({ search_count: newCount, reset_date })
+      .eq("user_id", userId);
+
+    if (updateError) return { error: "DB_ERROR" };
+
+    if (newCount === 10) {
+      await sendLimitNotificationEmail(userId, userEmail);
+    }
+
+    return { limitReached: false, newCount, resetDate: reset_date };
+  } catch {
+    return { error: "UNKNOWN_ERROR" };
   }
 }
 
@@ -422,7 +432,8 @@ async function generateVenueRecommendations({
       }
 
       return { validatedData, responseText };
-    } catch {
+    } catch (err) {
+      console.error(`Gemini attempt ${retryCount + 1} failed:`, err?.message ?? err);
       if (retryCount < MAX_RETRIES) {
         retryCount++;
         await delay(600 * retryCount);
@@ -443,7 +454,7 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
   const {
     venueType, country, state, city, date, time,
     audienceInput, venueSetting, audienceType,
-    additionalRequirements, userId,
+    additionalRequirements, userId, userEmail,
   } = req.body;
 
   const missingFields = [];
@@ -495,18 +506,16 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
     return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD." });
   }
 
-  // Check search limit (when enabled)
-  if (process.env.SEARCH_LIMIT_ENABLED === "true") {
-    const limitCheck = await checkAndIncrementSearchCount(userId);
-    if (limitCheck.error) {
-      return res.status(500).json({ error: limitCheck.error });
-    }
-    if (limitCheck.limitReached) {
-      return res.status(429).json({
-        error: "Search limit reached",
-        message: "You've used all 5 free searches. Upgrade coming soon.",
-      });
-    }
+  // Check monthly search limit
+  const limitCheck = await checkAndIncrementMonthlySearchCount(userId, userEmail);
+  if (limitCheck.error) {
+    return res.status(500).json({ error: "Failed to check search limit" });
+  }
+  if (limitCheck.limitReached) {
+    return res.status(429).json({
+      error: "Search limit reached",
+      resetDate: limitCheck.resetDate,
+    });
   }
 
   const result = await generateVenueRecommendations({
@@ -530,29 +539,6 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
   });
 });
 
-// Get user's current search count
-app.get("/api/searches/count/:userId", async (req, res) => {
-  const { userId } = req.params;
-
-  if (!userId) {
-    return res.status(400).json({ error: "userId is required" });
-  }
-
-  const limitsEnabled = process.env.SEARCH_LIMIT_ENABLED === "true";
-
-  if (!limitsEnabled) {
-    return res.json({ searchCount: 0, limitsEnabled: false });
-  }
-
-  const result = await getUserSearchCount(userId);
-
-  if (result.error) {
-    return res.status(500).json({ error: result.error });
-  }
-
-  res.json({ searchCount: result.searchCount, limitsEnabled: true });
-});
-
 // Add email to waitlist
 app.post("/api/waitlist", async (req, res) => {
   const { email } = req.body;
@@ -568,6 +554,39 @@ app.post("/api/waitlist", async (req, res) => {
   }
 
   res.json({ message: result.message });
+});
+
+// Get user's current monthly search count and reset date
+app.get("/api/search-limits/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId is required" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("user_search_limits")
+      .select("search_count, reset_date")
+      .eq("user_id", userId)
+      .single();
+
+    if (error && error.code === "PGRST116") {
+      return res.json({ searchCount: 0, resetDate: getFirstDayOfNextMonth() });
+    }
+    if (error) {
+      return res.status(500).json({ error: "Failed to fetch search limit" });
+    }
+
+    const now = new Date();
+    if (new Date(data.reset_date) <= now) {
+      return res.json({ searchCount: 0, resetDate: getFirstDayOfNextMonth() });
+    }
+
+    res.json({ searchCount: data.search_count, resetDate: data.reset_date });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch search limit" });
+  }
 });
 
 app.listen(port, () => {

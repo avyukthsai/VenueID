@@ -40,16 +40,28 @@ function Navbar({ onOpenContact }) {
           />
           Venue ID
         </Link>
-        {/* Saved link — desktop only */}
-        <Show when="signed-in">
-          <Link to="/history" className="navbar-saved-btn navbar-desktop-only">
-            Saved
-          </Link>
-        </Show>
       </div>
 
-      {/* Right — desktop: Contact Us pill + Auth; mobile: hamburger */}
+      {/* Right — desktop: Saved + Contact Us pill + Auth; mobile: hamburger */}
       <div className="navbar-right">
+        {/* Saved icon — desktop only */}
+        <Show when="signed-in">
+          <Link to="/history" className="navbar-saved-btn navbar-desktop-only" aria-label="Saved searches">
+            <svg
+              width="21"
+              height="21"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+          </Link>
+        </Show>
+
         {/* Desktop items */}
         <button
           className="navbar-contact-btn navbar-desktop-only"
