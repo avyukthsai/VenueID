@@ -28,6 +28,7 @@ for (const key of REQUIRED_ENV) {
 }
 
 const app = express();
+app.set("trust proxy", 1);
 const port = 3001;
 
 // Rate limiters
@@ -128,9 +129,20 @@ const MAX_VENUES_TO_RANK = 15;
 const MAX_RETRIES = 2;
 const GEMINI_TIMEOUT_MS = 30000;
 
-const VALID_VENUE_TYPES = ["Artist Venue", "Party Venue", "Wedding Venue", "Sports Tournament", "Theater Show"];
+const VALID_VENUE_TYPES = [
+  "Artist Venue",
+  "Wedding Venue",
+  "Party Venue",
+  "Sports Tournament",
+  "Theater Show",
+];
 const VALID_VENUE_SETTINGS = ["Indoor", "Outdoor", "Both"];
-const VALID_AUDIENCE_TYPES = ["General / All Ages", "21+", "Corporate / Professional", "Family Friendly"];
+const VALID_AUDIENCE_TYPES = [
+  "General / All Ages",
+  "21+",
+  "Corporate / Professional",
+  "Family Friendly",
+];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -190,11 +202,31 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
   const venueText =
     `${venue.name} ${venue.whyThisVenue} ${venue.features}`.toLowerCase();
   const typeKeywords = {
-    "artist venue": ["artist", "live", "music", "performance", "stage", "sound"],
-    "party venue": ["bar", "club", "lounge", "nightlife", "dance", "event space"],
+    "artist venue": [
+      "artist",
+      "live",
+      "music",
+      "performance",
+      "stage",
+      "sound",
+    ],
+    "party venue": [
+      "bar",
+      "club",
+      "lounge",
+      "nightlife",
+      "dance",
+      "event space",
+    ],
     "wedding venue": ["wedding", "banquet", "reception", "ballroom", "elegant"],
     "sports tournament": ["sports", "arena", "field", "stadium", "game"],
-    "theater show": ["theater", "auditorium", "stage", "seating", "performance"],
+    "theater show": [
+      "theater",
+      "auditorium",
+      "stage",
+      "seating",
+      "performance",
+    ],
   };
 
   const keywords = typeKeywords[venueType.toLowerCase()] || [];
@@ -203,8 +235,13 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
 
   const locationText = venue.location.toLowerCase();
   const accessibilityKeywords = [
-    "downtown", "central", "convenient", "accessible",
-    "public transit", "highway", "major road",
+    "downtown",
+    "central",
+    "convenient",
+    "accessible",
+    "public transit",
+    "highway",
+    "major road",
   ];
   const accessibilityMatches = accessibilityKeywords.filter((kw) =>
     locationText.includes(kw),
@@ -213,7 +250,14 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
 
   const featuresText = venue.features.toLowerCase();
   const commonFeatures = [
-    "parking", "food", "catering", "wifi", "sound", "lights", "seating", "accessibility",
+    "parking",
+    "food",
+    "catering",
+    "wifi",
+    "sound",
+    "lights",
+    "seating",
+    "accessibility",
   ];
   const featureMatches = commonFeatures.filter((f) =>
     featuresText.includes(f),
@@ -232,7 +276,10 @@ function calculateMatchScore(venue, venueType, audienceInput, index) {
 
 async function addToWaitlist(email) {
   try {
-    const { error } = await supabase.from("waitlist").insert([{ email }]).select();
+    const { error } = await supabase
+      .from("waitlist")
+      .insert([{ email }])
+      .select();
 
     if (error) {
       if (error.code === "23505") {
@@ -249,7 +296,9 @@ async function addToWaitlist(email) {
 
 function getFirstDayOfNextMonth() {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+  ).toISOString();
 }
 
 async function sendLimitNotificationEmail(userId, userEmail) {
@@ -350,7 +399,9 @@ async function generateVenueRecommendations({
     allVenues = mergeAndDeduplicateVenues(ticketmasterVenues, foursquareVenues);
 
     if (allVenues.length >= 5) {
-      venueContext = formatTicketmasterVenues(allVenues.slice(0, MAX_VENUES_TO_RANK));
+      venueContext = formatTicketmasterVenues(
+        allVenues.slice(0, MAX_VENUES_TO_RANK),
+      );
       venueContext = venueContext.replace(
         "REAL VENUES AVAILABLE IN THE AREA",
         "REAL VENUES FROM MULTIPLE VERIFIED SOURCES",
@@ -398,7 +449,10 @@ async function generateVenueRecommendations({
       const result = await Promise.race([
         model.startChat({ history: [] }).sendMessage(inputText),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Gemini request timed out")), GEMINI_TIMEOUT_MS)
+          setTimeout(
+            () => reject(new Error("Gemini request timed out")),
+            GEMINI_TIMEOUT_MS,
+          ),
         ),
       ]);
       const responseText = result.response.text();
@@ -406,7 +460,10 @@ async function generateVenueRecommendations({
       // Strip markdown code fences if present
       let cleanedText = responseText;
       if (cleanedText.includes("```json")) {
-        cleanedText = cleanedText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        cleanedText = cleanedText
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
       } else if (cleanedText.includes("```")) {
         cleanedText = cleanedText.replace(/```\n?/g, "").trim();
       }
@@ -419,7 +476,10 @@ async function generateVenueRecommendations({
           retryCount++;
           continue;
         }
-        return { error: "Failed to parse AI response format.", statusCode: 500 };
+        return {
+          error: "Failed to parse AI response format.",
+          statusCode: 500,
+        };
       }
 
       const validatedData = validateVenueResponse(parsedResponse);
@@ -433,7 +493,10 @@ async function generateVenueRecommendations({
 
       return { validatedData, responseText };
     } catch (err) {
-      console.error(`Gemini attempt ${retryCount + 1} failed:`, err?.message ?? err);
+      console.error(
+        `Gemini attempt ${retryCount + 1} failed:`,
+        err?.message ?? err,
+      );
       if (retryCount < MAX_RETRIES) {
         retryCount++;
         await delay(600 * retryCount);
@@ -452,9 +515,18 @@ async function generateVenueRecommendations({
 // Primary endpoint: returns structured JSON venues with match scores
 app.post("/api/venues/stream", venueLimiter, async (req, res) => {
   const {
-    venueType, country, state, city, date, time,
-    audienceInput, venueSetting, audienceType,
-    additionalRequirements, userId, userEmail,
+    venueType,
+    country,
+    state,
+    city,
+    date,
+    time,
+    audienceInput,
+    venueSetting,
+    audienceType,
+    additionalRequirements,
+    userId,
+    userEmail,
   } = req.body;
 
   const missingFields = [];
@@ -467,27 +539,56 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
   if (!userId) missingFields.push("userId");
 
   if (missingFields.length > 0) {
-    return res.status(400).json({ error: "All input fields are required.", missingFields });
+    return res
+      .status(400)
+      .json({ error: "All input fields are required.", missingFields });
   }
 
   // Type validation
-  const requiredStrings = { venueType, country, city, date, time, audienceInput, userId };
+  const requiredStrings = {
+    venueType,
+    country,
+    city,
+    date,
+    time,
+    audienceInput,
+    userId,
+  };
   for (const [field, val] of Object.entries(requiredStrings)) {
     if (typeof val !== "string") {
-      return res.status(400).json({ error: `Invalid type for field: ${field}` });
+      return res
+        .status(400)
+        .json({ error: `Invalid type for field: ${field}` });
     }
   }
-  if (additionalRequirements !== undefined && typeof additionalRequirements !== "string") {
-    return res.status(400).json({ error: "Invalid type for field: additionalRequirements" });
+  if (
+    additionalRequirements !== undefined &&
+    typeof additionalRequirements !== "string"
+  ) {
+    return res
+      .status(400)
+      .json({ error: "Invalid type for field: additionalRequirements" });
   }
 
   // Length validation
-  if (venueType.length > 100 || country.length > 100 || city.length > 100 ||
-      date.length > 20 || time.length > 20 || audienceInput.length > 50) {
-    return res.status(400).json({ error: "Input field exceeds maximum length." });
+  if (
+    venueType.length > 100 ||
+    country.length > 100 ||
+    city.length > 100 ||
+    date.length > 20 ||
+    time.length > 20 ||
+    audienceInput.length > 50
+  ) {
+    return res
+      .status(400)
+      .json({ error: "Input field exceeds maximum length." });
   }
   if (additionalRequirements && additionalRequirements.length > 500) {
-    return res.status(400).json({ error: "Additional requirements must be 500 characters or fewer." });
+    return res
+      .status(400)
+      .json({
+        error: "Additional requirements must be 500 characters or fewer.",
+      });
   }
 
   // Enum validation
@@ -503,11 +604,16 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
 
   // Date format validation (YYYY-MM-DD)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD." });
+    return res
+      .status(400)
+      .json({ error: "Invalid date format. Use YYYY-MM-DD." });
   }
 
   // Check monthly search limit
-  const limitCheck = await checkAndIncrementMonthlySearchCount(userId, userEmail);
+  const limitCheck = await checkAndIncrementMonthlySearchCount(
+    userId,
+    userEmail,
+  );
   if (limitCheck.error) {
     return res.status(500).json({ error: "Failed to check search limit" });
   }
@@ -519,8 +625,16 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
   }
 
   const result = await generateVenueRecommendations({
-    venueType, country, state, city, date, time,
-    audienceInput, venueSetting, audienceType, additionalRequirements,
+    venueType,
+    country,
+    state,
+    city,
+    date,
+    time,
+    audienceInput,
+    venueSetting,
+    audienceType,
+    additionalRequirements,
   });
 
   if (result.error) {
@@ -529,7 +643,12 @@ app.post("/api/venues/stream", venueLimiter, async (req, res) => {
 
   // Attach match scores
   result.validatedData.venues.forEach((venue, index) => {
-    venue.matchScore = calculateMatchScore(venue, venueType, audienceInput, index);
+    venue.matchScore = calculateMatchScore(
+      venue,
+      venueType,
+      audienceInput,
+      index,
+    );
   });
 
   return res.json({

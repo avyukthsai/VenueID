@@ -259,8 +259,8 @@ function App() {
 
   const venueOptions = [
     "Artist Venue",
-    "Party Venue",
     "Wedding Venue",
+    "Party Venue",
     "Sports Tournament",
     "Theater Show",
   ];
